@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "50548318614",
+    "project_id": "settisfy-2c8ca",
+    "storage_bucket": "settisfy-2c8ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50548318614:android:774bb54ede0311dca5bdb7",
+        "android_client_info": {
+          "package_name": "com.settisfy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBx3aj1vw6Ahu0iVG3mYOrhp09Bk_GBeYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50548318614:android:20498e99a22f69c6a5bdb7",
+        "android_client_info": {
+          "package_name": "com.settisfy_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBx3aj1vw6Ahu0iVG3mYOrhp09Bk_GBeYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
