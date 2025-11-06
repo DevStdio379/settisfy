@@ -1,6 +1,6 @@
 import React, { use, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './src/navigation/AppNavigator';
+import AppNavigator from './app/navigation/AppNavigator';
 import messaging from '@react-native-firebase/messaging';
 import { Alert } from 'react-native';
 
