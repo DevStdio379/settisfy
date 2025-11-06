@@ -54,7 +54,24 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
+	<key>Privacy - Location When In Use Usage Description
+Privacy - Location When In Use Usage Description
+</key>
+	<string>We need your location to provide you to the nearest settler for your requested service.
+</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Location access may be required for certain features in future updates.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>Location access may be required for certain features in future updates.</string>
+<key>NSCameraUsageDescription</key>
+<string>The camera access is needed to allow user to take photos of their service for evidence &amp; service-records.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Accessing library to provide an alternative options for user to upload their service works &amp; evidence.</string>
+<key>UIViewControllerBasedStatusBarAppearance</key>
+<false/>
+<key>UIAppFonts</key>
+<array>
+  <string>Ionicons.ttf</string>
+</array>
 </dict>
 </plist>
