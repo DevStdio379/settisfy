@@ -16,7 +16,7 @@ const OTPInput = ({code,setCode,maximumLength,setIsPinReady} : props) => {
 
     const boxArray = new Array(maximumLength).fill(0);
 
-    const inputRef = useRef<any>();
+    const inputRef = useRef<any>(null);
 
     const theme = useTheme();
     const {colors}:{colors : any} = theme;
