@@ -5,10 +5,11 @@ import AddressBook from "../screens/Profile/AddressBook";
 import SearchAddress from "../screens/Profile/SearchAddress";
 import PersonalDetails from "../screens/Profile/PersonalDetails";
 import CatalogueList from "../screens/Profile/CatalogueList";
-import ServiceCatalogue, { ServiceCatalogueForm } from "../screens/ServiceCatalogueForm";
+import ServiceCatalogueForm from "../screens/ServiceCatalogueForm";
 import PaymentBook from "../screens/Profile/PaymentBook";
 import AddPayment from "../screens/Profile/AddPayment";
 import CompanyInformation from "../screens/Profile/CompanyInformation";
+import AccountDeletion from "../screens/Profile/AccountDeletion";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -28,6 +29,7 @@ const ProfileStack = () => (
         <Stack.Screen name="AddPayment" component={AddPayment} />
         <Stack.Screen name="CatalogueList" component={CatalogueList} />
         <Stack.Screen name="ServiceCatalogueForm" component={ServiceCatalogueForm} />
+        <Stack.Screen name="AccountDeletion" component={AccountDeletion} />
     </Stack.Navigator>
 );
 

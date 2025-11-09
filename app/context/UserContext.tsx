@@ -38,6 +38,7 @@ export interface UserContextType {
   fetchAllUsers: () => Promise<User[]>;
   updateUserData: (uid: string, updatedData: Partial<User>) => Promise<void>;
   fetchUsersByIds: (userIds: string[]) => Promise<User[]>;
+  deleteUserAccount: (userId: string) => Promise<void>;
 }
 
 export const defaultUser: User = {
@@ -184,7 +185,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('Error updating user in Firestore:', error);
     }
   };
-
 
   const createUser = async (userData: User) => {
     try {
@@ -340,8 +340,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // account deletion
+  const deleteUserAccount = async (userId: string): Promise<void> => {
+    try {
+      await firestore().collection('users').doc(userId).delete();
+      console.log(`✅ Deleted user account with ID: ${userId}`);
+    } catch (error) {
+      console.error('❌ Error deleting user account:', error);
+      throw error;
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user, updateUserData, createUser, fetchSelectedUser, fetchAllUsers, fetchUsersByIds }}>
+    <UserContext.Provider value={{ user, updateUserData, createUser, fetchSelectedUser, fetchAllUsers, fetchUsersByIds, deleteUserAccount }}>
       {children}
     </UserContext.Provider>
   );

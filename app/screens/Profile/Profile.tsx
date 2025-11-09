@@ -258,6 +258,20 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                         </View>
                         <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>Customer Support</Text>
                     </View>
+                    <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate('AccountDeletion')}>
+                        <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
+                                <View style={[styles.cardimg]} >
+                                    <Ionicons name='close-circle' size={30} color={colors.title} />
+                                </View>
+                                <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>Account Deletion</Text>
+                            </View>
+                            <Ionicons name='chevron-forward-outline' size={30} color={COLORS.blackLight} />
+                        </View>
+                    </TouchableOpacity>
                     <View style={{ gap: 10, paddingTop: 30 }}>
                         <TouchableOpacity
                             activeOpacity={0.8}
