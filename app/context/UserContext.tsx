@@ -1,11 +1,13 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import React, { createContext, useState, ReactNode, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import storage from '@react-native-firebase/storage';
 import { formatDistanceToNow } from "date-fns";
 import { Address } from "../services/AddressServices";
 import { Payment } from "../services/PaymentServices";
+
 
 interface ActiveJob {
   settlerServiceId: string;
@@ -343,10 +345,26 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // account deletion
   const deleteUserAccount = async (userId: string): Promise<void> => {
     try {
+      // Step 1: Delete Firestore user document
       await firestore().collection('users').doc(userId).delete();
-      console.log(`✅ Deleted user account with ID: ${userId}`);
-    } catch (error) {
-      console.error('❌ Error deleting user account:', error);
+      console.log(`✅ Deleted Firestore document for user: ${userId}`);
+
+      // Step 2: Delete user from Firebase Authentication (only if it's the current user)
+      const currentUser = auth().currentUser;
+      if (currentUser && currentUser.uid === userId) {
+        await currentUser.delete();
+        console.log(`✅ Deleted Firebase Auth user: ${userId}`);
+      } else {
+        console.warn(`⚠️ Cannot delete Auth user ${userId}: not the current user`);
+      }
+
+    } catch (error: any) {
+      // If "requires recent login" error, handle it
+      if (error.code === 'auth/requires-recent-login') {
+        console.error("❌ Deletion failed: requires recent login. Prompt user to reauthenticate.");
+      } else {
+        console.error("❌ Error deleting user account:", error);
+      }
       throw error;
     }
   };
