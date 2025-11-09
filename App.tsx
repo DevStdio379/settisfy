@@ -1,6 +1,5 @@
 import React, { use, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './app/navigation/AppNavigator';
 import messaging from '@react-native-firebase/messaging';
 import { Alert, Platform } from 'react-native';
 
@@ -43,7 +42,6 @@ export default function App() {
   const getFcmToken = async () => {
     const fcmToken = await messaging().getToken();
     if (fcmToken) {
-      Alert.alert('FCM Token', fcmToken);
       console.log('Your Firebase Cloud Messaging Token is:', fcmToken);
     } else {
       Alert.alert('FCM Token', 'Failed to get FCM token');

@@ -1,9 +1,9 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import React, { createContext, useState, ReactNode, useContext, useEffect } from "react";
-import { db, storage } from "../services/firebaseConfig";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { format, formatDistanceToNow } from "date-fns";
+import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage';
+import { formatDistanceToNow } from "date-fns";
 import { Address } from "../services/AddressServices";
 import { Payment } from "../services/PaymentServices";
 
@@ -33,10 +33,11 @@ export interface User {
 
 export interface UserContextType {
   user: User | null;
-  setUser: (user: User | null) => void;
   createUser: (userData: User) => Promise<void>;
-  fetchUser: (uid: string) => Promise<void>;
+  fetchSelectedUser: (uid: string) => Promise<void>;
+  fetchAllUsers: () => Promise<User[]>;
   updateUserData: (uid: string, updatedData: Partial<User>) => Promise<void>;
+  fetchUsersByIds: (userIds: string[]) => Promise<User[]>;
 }
 
 export const defaultUser: User = {
@@ -54,43 +55,47 @@ export const defaultUser: User = {
   memberFor: "1 year",
 };
 
-
-
-// Function to upload a single image to Firebase Storage
-export const uploadImage = async (imageName: string, imageUrl: string) => {
+// Function to upload a single image to Firebase Storage (React Native Firebase version)
+export const uploadImage = async (imageName: string, imageUri: string): Promise<string> => {
   try {
-    // Convert to Blob
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-
-    // Generate unique filename
+    // Generate unique filename and reference
     const filename = `users/${imageName}.jpg`;
-    const storageRef = ref(storage, filename);
+    const storageRef = storage().ref(filename);
 
-    // Upload file
-    const uploadTask = uploadBytesResumable(storageRef, blob);
+    // Start upload (React Native Firebase supports local file URIs directly)
+    const uploadTask = storageRef.putFile(imageUri);
 
+    // Track upload progress
     await new Promise<void>((resolve, reject) => {
       uploadTask.on(
-        "state_changed",
-        snapshot => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        'state_changed',
+        (taskSnapshot) => {
+          const progress = (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
           console.log(`Upload ${filename}: ${progress.toFixed(2)}% done`);
         },
-        reject, // Handle error
+        (error) => {
+          console.error('Upload failed:', error);
+          reject(error);
+        },
         async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          console.log("Image uploaded:", downloadURL);
+          console.log('Upload completed');
           resolve();
         }
       );
     });
 
+    // Get download URL after upload completes
+    const downloadURL = await storageRef.getDownloadURL();
+    console.log('Image uploaded successfully:', downloadURL);
+
+    return downloadURL;
+
   } catch (error) {
-    console.error("Upload failed:", error);
+    console.error('Upload failed:', error);
     throw error;
   }
 };
+
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
@@ -101,7 +106,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const uid = await AsyncStorage.getItem('userUID');
         if (uid) {
-          await fetchUser(uid);
+          await fetchSelectedUser(uid);
           await updateUserData(uid, { isActive: true });
         } else {
           console.log("No userUID in storage.");
@@ -118,95 +123,225 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateUserData = async (uid: string, updatedData: Partial<User>) => {
     try {
-      // Handle profile image upload if profileImageUrl is provided
-      if (updatedData.profileImageUrl) {
-        const imageUrl = updatedData.profileImageUrl;
-        await uploadImage(uid, imageUrl);
-        const storageRef = ref(storage, `users/${uid}.jpg`);
-        updatedData.profileImageUrl = await getDownloadURL(storageRef);
+      // Handle profile image upload if profileImageUrl (local URI) is provided
+      if (updatedData.profileImageUrl && updatedData.profileImageUrl.startsWith('file://')) {
+        const localUri = updatedData.profileImageUrl;
+        const filename = `users/${uid}.jpg`;
+        const storageRef = storage().ref(filename);
+
+        console.log('Uploading new profile image...');
+        await storageRef.putFile(localUri);
+
+        // Get the hosted URL
+        const downloadURL = await storageRef.getDownloadURL();
+        updatedData.profileImageUrl = downloadURL;
+        console.log('Profile image uploaded:', downloadURL);
       }
 
-      const userRef = doc(db, "users", uid);
-      await updateDoc(userRef, updatedData);
-      const updatedDoc = await getDoc(userRef);
+      // Reference to user document
+      const userRef = firestore().collection('users').doc(uid);
+
+      // Add a timestamp
+      updatedData.updatedAt = firestore.FieldValue.serverTimestamp();
+
+      // Update Firestore document
+      await userRef.update(updatedData);
+      console.log('User data updated successfully.');
+
+      // Fetch the updated user document
+      const updatedDoc = await userRef.get();
 
       if (updatedDoc.exists()) {
         const userData = updatedDoc.data();
+
         const updatedUser: User = {
-          uid: userData.uid || '',
-          email: userData.email || '',
-          userName: userData.userName || '',
-          isActive: userData.isActive || false,
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          phoneNumber: userData.phoneNumber || '',
-          accountType: userData.accountType || '',
-          isVerified: userData.isVerified || false,
-          profileImageUrl: userData.profileImageUrl || '',
-          createAt: userData.createAt || '',
-          updatedAt: userData.updatedAt || '',
-          memberFor: formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false }),
-          currentAddress: userData.currentAddress ? (userData.currentAddress as Address) : undefined,
-          currentPayment: userData.currentPayment ? (userData.currentPayment as Payment) : undefined,
-          activeJobs: userData.activeJobs || undefined,
+          uid: userData?.uid ?? '',
+          email: userData?.email ?? '',
+          userName: userData?.userName ?? '',
+          isActive: userData?.isActive ?? false,
+          firstName: userData?.firstName ?? '',
+          lastName: userData?.lastName ?? '',
+          phoneNumber: userData?.phoneNumber ?? '',
+          accountType: userData?.accountType ?? '',
+          isVerified: userData?.isVerified ?? false,
+          profileImageUrl: userData?.profileImageUrl ?? '',
+          createAt: userData?.createAt ?? '',
+          updatedAt: userData?.updatedAt ?? '',
+          memberFor: userData?.createdAt
+            ? formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false })
+            : '',
+          currentAddress: userData?.currentAddress,
+          currentPayment: userData?.currentPayment,
+          activeJobs: userData?.activeJobs,
         };
+
         setUser(updatedUser);
-        console.log("User updated in context:", updatedUser);
+        console.log('User updated in context:', updatedUser);
+      } else {
+        console.warn('No user found with UID:', uid);
       }
     } catch (error) {
-      console.error("Error updating user in Firestore:", error);
+      console.error('Error updating user in Firestore:', error);
     }
   };
 
+
   const createUser = async (userData: User) => {
     try {
-      const userRef = doc(db, "users", userData.uid);
-      await setDoc(userRef, { ...userData, createdAt: new Date() });
-      setUser(userData); // Update the context
-      console.log("User created and context updated:", userData);
+      // Reference to user document
+      const userRef = firestore().collection('users').doc(userData.uid);
+
+      // Create document with server timestamp
+      await userRef.set({
+        ...userData,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Update context
+      setUser(userData);
+      console.log('User created and context updated:', userData);
+
     } catch (error) {
-      console.error("Error creating user in Firestore:", error);
+      console.error('Error creating user in Firestore:', error);
       throw error;
     }
   };
 
-  const fetchUser = async (uid: string) => {
+  const fetchSelectedUser = async (uid: string) => {
     try {
-      const userDocRef = doc(db, "users", uid);
-      const userDocSnap = await getDoc(userDocRef);
+      const userRef = firestore().collection('users').doc(uid);
+      const userDoc = await userRef.get();
 
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+
         const userInfo: User = {
-          uid: uid,
-          email: userData.email || '',
-          userName: userData.userName || '',
+          uid,
+          email: userData?.email ?? '',
+          userName: userData?.userName ?? '',
           isActive: true,
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          phoneNumber: userData.phoneNumber || '',
-          accountType: userData.accounType,
-          isVerified: userData.isVerified || false,
-          profileImageUrl: userData.profileImageUrl || '',
-          createAt: userData.createAt || '',
-          updatedAt: userData.updatedAt || '',
-          memberFor: formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false }),
-          currentAddress: userData.currentAddress || undefined,
-          currentPayment: userData.currentPayment || undefined,
+          firstName: userData?.firstName ?? '',
+          lastName: userData?.lastName ?? '',
+          phoneNumber: userData?.phoneNumber ?? '',
+          accountType: userData?.accountType ?? '', // fixed typo
+          isVerified: userData?.isVerified ?? false,
+          profileImageUrl: userData?.profileImageUrl ?? '',
+          createAt: userData?.createAt ?? '',
+          updatedAt: userData?.updatedAt ?? '',
+          memberFor: userData?.createdAt
+            ? formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false })
+            : '',
+          currentAddress: userData?.currentAddress ?? undefined,
+          currentPayment: userData?.currentPayment ?? undefined,
+          activeJobs: userData?.activeJobs ?? undefined
         };
+
         setUser(userInfo);
-        console.log("User fetched and context updated:", userInfo);
+        console.log('✅ User fetched and context updated:', userInfo);
       } else {
-        throw new Error("User data not found.");
+        throw new Error('User data not found.');
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error('❌ Error fetching user data:', error);
+      throw error;
+    }
+  };
+
+  const fetchAllUsers = async (): Promise<User[]> => {
+    try {
+      const usersCollection = firestore().collection('users');
+      const snapshot = await usersCollection.get();
+
+      const usersList: User[] = snapshot.docs.map(doc => {
+        const userData = doc.data();
+
+        return {
+          uid: userData?.uid ?? '',
+          email: userData?.email ?? '',
+          userName: userData?.userName ?? '',
+          isActive: userData?.isActive ?? false,
+          firstName: userData?.firstName ?? '',
+          lastName: userData?.lastName ?? '',
+          phoneNumber: userData?.phoneNumber ?? '',
+          accountType: userData?.accountType ?? '',
+          isVerified: userData?.isVerified ?? false,
+          profileImageUrl: userData?.profileImageUrl ?? '',
+          createAt: userData?.createAt ?? '',
+          updatedAt: userData?.updatedAt ?? '',
+          memberFor: userData?.createdAt
+            ? formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false })
+            : '',
+          currentAddress: userData?.currentAddress ?? undefined,
+          currentPayment: userData?.currentPayment ?? undefined,
+          activeJobs: userData?.activeJobs ?? undefined,
+        };
+      });
+
+      console.log(`✅ Fetched ${usersList.length} users from Firestore.`);
+      return usersList;
+
+    } catch (error) {
+      console.error('❌ Error fetching users data:', error);
+      throw error;
+    }
+  };
+
+  const fetchUsersByIds = async (userIds: string[]): Promise<User[]> => {
+    try {
+      if (!userIds.length) return [];
+
+      // Firestore can query up to 10 IDs at a time
+      const chunks = [];
+      for (let i = 0; i < userIds.length; i += 10) {
+        chunks.push(userIds.slice(i, i + 10));
+      }
+
+      const users: User[] = [];
+
+      for (const chunk of chunks) {
+        const snapshot = await firestore()
+          .collection('users')
+          .where(firestore.FieldPath.documentId(), 'in', chunk)
+          .get();
+
+        snapshot.forEach(doc => {
+          const userData = doc.data();
+
+          const user: User = {
+            uid: doc.id,
+            email: userData?.email ?? '',
+            userName: userData?.userName ?? '',
+            isActive: userData?.isActive ?? false,
+            firstName: userData?.firstName ?? '',
+            lastName: userData?.lastName ?? '',
+            phoneNumber: userData?.phoneNumber ?? '',
+            accountType: userData?.accountType ?? '',
+            isVerified: userData?.isVerified ?? false,
+            profileImageUrl: userData?.profileImageUrl ?? '',
+            createAt: userData?.createAt ?? '',
+            updatedAt: userData?.updatedAt ?? '',
+            memberFor: userData?.createdAt
+              ? formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false })
+              : '',
+            currentAddress: userData?.currentAddress ?? undefined,
+            currentPayment: userData?.currentPayment ?? undefined,
+            activeJobs: userData?.activeJobs ?? undefined,
+          };
+
+          users.push(user);
+        });
+      }
+
+      console.log(`✅ Fetched ${users.length} users by IDs.`);
+      return users;
+    } catch (error) {
+      console.error('❌ Error fetching users by IDs:', error);
       throw error;
     }
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, updateUserData, createUser, fetchUser }}>
+    <UserContext.Provider value={{ user, updateUserData, createUser, fetchSelectedUser, fetchAllUsers, fetchUsersByIds }}>
       {children}
     </UserContext.Provider>
   );
@@ -218,88 +353,4 @@ export const useUser = (): UserContextType => {
     throw new Error("useUser must be used within a UserProvider");
   }
   return context;
-};
-
-export const fetchSelectedUser = async (userId: string): Promise<User | null> => {
-  try {
-    const userDocRef = doc(db, "users", userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data();
-      const userInfo: User = {
-        uid: userData.uid || '',
-        email: userData.email || '',
-        userName: userData.userName || '',
-        isActive: true,
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        phoneNumber: userData.phoneNumber || '',
-        accountType: userData.accountType || '',
-        isVerified: userData.isVerified || false,
-        profileImageUrl: userData.profileImageUrl || '',
-        createAt: userData.createAt || '',
-        updatedAt: userData.updatedAt || '',
-        memberFor: formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false }),
-        currentAddress: userData.currentAddress || undefined,
-        currentPayment: userData.currentPayment || undefined,
-        activeJobs: userData.activeJobs || undefined
-      };
-      return userInfo;
-    } else {
-      console.error("User data not found.");
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    throw error;
-  }
-};
-
-export const fetchAllUsers = async (): Promise<User[]> => {
-  try {
-    const usersCollectionRef = collection(db, "users");
-    const usersSnapshot = await getDocs(usersCollectionRef);
-    const usersList: User[] = usersSnapshot.docs.map(doc => {
-      const userData = doc.data();
-      return {
-        uid: userData.uid || '',
-        email: userData.email || '',
-        userName: userData.userName || '',
-        isActive: userData.isActive || false,
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        phoneNumber: userData.phoneNumber || '',
-        accountType: userData.accountType || '',
-        isVerified: userData.isVerified || false,
-        profileImageUrl: userData.profileImageUrl || '',
-        createAt: userData.createAt || '',
-        updatedAt: userData.updatedAt || '',
-        memberFor: formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false }),
-        currentAddress: userData.currentAddress || undefined,
-        currentPayment: userData.currentPayment || undefined,
-        activeJobs: userData.activeJobs || undefined
-      };
-    });
-    return usersList;
-  } catch (error) {
-    console.error("Error fetching users data:", error);
-    throw error;
-  }
-};
-
-export const fetchUsersByIds = async (userIds: string[]): Promise<User[]> => {
-  try {
-    const users: User[] = [];
-    for (const userId of userIds) {
-      const user = await fetchSelectedUser(userId);
-      if (user) {
-        users.push(user);
-      }
-    }
-    return users;
-  } catch (error) {
-    console.error("Error fetching users by IDs:", error);
-    throw error;
-  }
 };

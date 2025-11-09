@@ -324,7 +324,7 @@ const AddAddress = ({ navigation, route }: AddAddressScreenProps) => {
         {/* Phone Number */}
         <AddressCard title="Phone Number">
           <Input
-            placeholder='e.g. +601 7123 456789'
+            placeholder='e.g. +60 7123 4567'
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             style={styles.inputBox}

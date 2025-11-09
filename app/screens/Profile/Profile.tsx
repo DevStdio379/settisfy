@@ -6,7 +6,7 @@ import { COLORS } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useUser, defaultUser } from '../../context/UserContext';
+import { useUser, defaultUser, User } from '../../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
@@ -14,20 +14,18 @@ type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
 const Profile = ({ navigation }: ProfileScreenProps) => {
 
     const theme = useTheme();
-    const { user, updateUserData, setUser } = useUser();
+    const { user, updateUserData, fetchSelectedUser } = useUser();
     const { colors }: { colors: any } = theme;
-
-    const [borrowingCount, setBorrowingCount] = useState<number>(0);
-    const [lendingCount, setLendingCount] = useState<number>(0);
-    const [lendingRating, setLendingRating] = useState<number>(0);
-    const [borrowingRating, setBorrowingRating] = useState<number>(0);
-    const [overallRating, setOverallRating] = useState<number>(0);
 
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
-        setLoading(true);
+        if (user) {
+            await fetchSelectedUser(user.uid);
+        }
+
+        setLoading(false);
     };
 
     useEffect(() => {
@@ -44,7 +42,6 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
             if (user?.uid) {
                 await updateUserData(user.uid, { 'isActive': false });
                 navigation.navigate('SignIn')
-                setUser(defaultUser)
                 await AsyncStorage.removeItem('userUID');
             } else {
                 console.error("User ID is undefined");
@@ -155,29 +152,8 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                         )}
                     </View>
                     <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.title, paddingBottom: 10 }}>
-                            {user?.firstName} {user?.lastName} <Text style={{ fontSize: 14, fontWeight: 'normal' }}>{overallRating.toFixed(2)} <Ionicons name="star" size={14} color={COLORS.placeholder} /></Text>
-                        </Text>
-                        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 14, color: COLORS.blackLight }}>
-                                    {borrowingRating.toFixed(2)} <Ionicons name="star" size={14} color={COLORS.placeholder} />
-                                </Text>
-                                <Text style={{ fontSize: 14, color: colors.text }}>Customer</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 14, color: COLORS.blackLight }}>
-                                    {lendingRating.toFixed(2)} <Ionicons name="star" size={14} color={COLORS.placeholder} />
-                                </Text>
-                                <Text style={{ fontSize: 14, color: colors.text }}>Settler</Text>
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 14, color: COLORS.blackLight }}>
-                                    {borrowingCount + lendingCount}
-                                </Text>
-                                <Text style={{ fontSize: 14, color: colors.text }}>Reviews</Text>
-                            </View>
-                        </View>
+                        <Text style={{ fontSize: 14, color: COLORS.title }}>{user.currentAddress?.addressName}</Text>
+                                                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: COLORS.title }}>{user.firstName} {user.lastName}</Text>
                     </View>
                 </View>
                 {!user?.isVerified && (

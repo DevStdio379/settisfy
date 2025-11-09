@@ -3,7 +3,7 @@ import { View, Button, FlatList, RefreshControl, TouchableOpacity, Text, Image }
 import { useNavigation } from '@react-navigation/native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
-import { fetchAllUsers, User, useUser } from '../../context/UserContext';
+import { User, useUser } from '../../context/UserContext';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { auth, db } from '../../services/firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';

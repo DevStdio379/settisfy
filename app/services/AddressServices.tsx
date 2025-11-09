@@ -11,8 +11,8 @@ export interface Address {
   postcode: string;
   addressLabel: string;
   phoneNumber: string;
-  createAt?: FirebaseFirestoreTypes.Timestamp;
-  updatedAt?: FirebaseFirestoreTypes.Timestamp;
+  createAt?: any;
+  updatedAt?: any;
 }
 
 /* 🔹 Save a new user address */
