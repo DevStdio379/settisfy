@@ -56,7 +56,6 @@ const AddAddress = ({ navigation, route }: AddAddressScreenProps) => {
 
 
   useEffect(() => {
-
     if (route.params.addressInfo) {
       const info = route.params.addressInfo;
       setBuildingType(info.buildingType || 'house');
@@ -200,7 +199,6 @@ const AddAddress = ({ navigation, route }: AddAddressScreenProps) => {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={fetchSelectedUserAddress}
             tintColor={COLORS.primary}
           />
         }

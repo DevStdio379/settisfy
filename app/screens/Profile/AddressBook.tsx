@@ -45,7 +45,7 @@ const AddressBook = ({ navigation }: AddressBookScreenProps) => {
     if (userId) getAddresses()
   }, [userId])
 
-  // ✅ Refresh handler
+  // Refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     await getAddresses()
@@ -53,84 +53,84 @@ const AddressBook = ({ navigation }: AddressBookScreenProps) => {
   }, [userId])
 
   return (
-      <View style={{ backgroundColor: colors.background, flex: 1 }}>
-        {/* Header */}
+    <View style={{ backgroundColor: colors.background, flex: 1 }}>
+      {/* Header */}
+      <View
+        style={{
+          zIndex: 1,
+          height: 60,
+          backgroundColor: COLORS.background,
+          borderBottomColor: COLORS.card,
+          borderBottomWidth: 1,
+        }}
+      >
         <View
           style={{
-            zIndex: 1,
-            height: 60,
+            height: '100%',
             backgroundColor: COLORS.background,
-            borderBottomColor: COLORS.card,
-            borderBottomWidth: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: 8,
+            paddingHorizontal: 10,
           }}
         >
-          <View
-            style={{
-              height: '100%',
-              backgroundColor: COLORS.background,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingTop: 8,
-              paddingHorizontal: 10,
-            }}
-          >
-            <View style={{ flex: 1, alignItems: 'flex-start' }}>
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{
-                  height: 45,
-                  width: 45,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons
-                  size={30}
-                  color={COLORS.black}
-                  name='chevron-back-outline'
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text
-                style={{
-                  width: 200,
-                  fontSize: 18,
-                  fontWeight: 'bold',
-                  color: COLORS.title,
-                  textAlign: 'center',
-                }}
-              >
-                Address Book
-              </Text>
-            </View>
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('SearchAddress')}
-                style={{
-                  height: 40,
-                  width: 40,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons size={30} color={COLORS.black} name='add' />
-              </TouchableOpacity>
-            </View>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{
+                height: 45,
+                width: 45,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons
+                size={30}
+                color={COLORS.black}
+                name='chevron-back-outline'
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text
+              style={{
+                width: 200,
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: COLORS.title,
+                textAlign: 'center',
+              }}
+            >
+              Address Book
+            </Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('SearchAddress')}
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons size={30} color={COLORS.black} name='add' />
+            </TouchableOpacity>
           </View>
         </View>
-        <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={COLORS.primary}
-          colors={[COLORS.primary]}
-        />
-      }
-    >
+      </View>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+      >
         {/* Address List */}
         {addresses.length === 0 && !loading ? (
           <View
@@ -234,8 +234,8 @@ const AddressBook = ({ navigation }: AddressBookScreenProps) => {
             </View>
           ))
         )}
-        </ScrollView>
-      </View>
+      </ScrollView>
+    </View>
   )
 }
 
