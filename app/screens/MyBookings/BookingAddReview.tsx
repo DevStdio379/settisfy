@@ -417,6 +417,7 @@ const BookingAddReview = ({ navigation, route }: BookingAddReviewScreenProps) =>
                         {booking.status === 6 && (
                             <View style={{ paddingTop: 20 }}>
                                 <TouchableOpacity
+                                    disabled={loading}
                                     style={{
                                         backgroundColor: COLORS.primary,
                                         padding: 15,
@@ -424,8 +425,10 @@ const BookingAddReview = ({ navigation, route }: BookingAddReviewScreenProps) =>
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         width: '100%',
+                                        opacity: loading ? 0.7 : 1,
                                     }}
                                     onPress={async () => {
+                                        setLoading(true);
                                         await handleReview();
                                         navigation.reset({
                                             index: 0,
@@ -433,7 +436,7 @@ const BookingAddReview = ({ navigation, route }: BookingAddReviewScreenProps) =>
                                         });
                                     }}
                                 >
-                                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Submit Review</Text>
+                                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>{loading ? 'Submitting...' : 'Submit Review'}</Text>
                                 </TouchableOpacity>
                             </View>
                         )}

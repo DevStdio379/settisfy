@@ -28,8 +28,8 @@ const MyBookings = ({ navigation }: MyBookingsScreenProps) => {
     const fetchData = async () => {
         if (user?.uid) {
             const myBookingsData = await fetchBookingsByUser(user.uid);
-            const activeBookings = myBookingsData.filter(listing => listing.status !== 6 && Number(listing.status) < 11);
-            const inactiveBookings = myBookingsData.filter(listing => listing.status === 6 || Number(listing.status) >= 11);
+            const activeBookings = myBookingsData.filter(listing => listing.status !== 6 && Number(listing.status) < 10);
+            const inactiveBookings = myBookingsData.filter(listing => listing.status === 6 || Number(listing.status) >= 10);
             setActiveBookings(activeBookings);
             setInactiveBookings(inactiveBookings);
         }

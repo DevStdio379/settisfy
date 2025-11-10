@@ -30,8 +30,8 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
   const fetchData = async () => {
     if (user?.uid) {
       const setRequestsData = await fetchBookingsAsSettler(user.uid);
-      const activeJobs = setRequestsData.filter(booking => booking.status !== 6 && Number(booking.status) < 11);
-      const inactiveJobs = setRequestsData.filter(booking => booking.status === 6 || Number(booking.status) >= 11);
+      const activeJobs = setRequestsData.filter(booking => booking.status !== 6 && Number(booking.status) < 10);
+      const inactiveJobs = setRequestsData.filter(booking => booking.status === 6 || Number(booking.status) >= 10);
       setActiveJobs(activeJobs);
       setInactiveJobs(inactiveJobs);
     }
