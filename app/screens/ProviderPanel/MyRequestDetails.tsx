@@ -9,7 +9,7 @@ import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { createReview, getReviewByBookingId, Review } from '../../services/ReviewServices';
-import { Booking, BookingActivityType, BookingActorType, fetchSelectedBooking, updateBooking, uploadImageIncompletionResolveEvidence, uploadImagesCompletionEvidence, uploadImagesCooldownReportEvidence } from '../../services/BookingServices';
+import { Booking, BookingActivityType, BookingActorType, fetchSelectedBooking, updateBooking, uploadImageIncompletionResolveEvidence, uploadImagesCompletionEvidence, uploadImagesCooldownReportEvidence, uploadImagesCooldownResolveEvidence } from '../../services/BookingServices';
 import { getOrCreateChat } from '../../services/ChatServices';
 import Input from '../../components/Input/Input';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -954,6 +954,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                         setLoading(true);
                                                         await updateBooking(booking.id!, {
                                                             cooldownStatus: BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT,
+                                                            updatedAt: new Date(),
                                                             status: 5,
 
                                                             timeline: firestore.FieldValue.arrayUnion({
@@ -1322,7 +1323,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
                                                                             let uploadedUrls: string[] = [];
                                                                             if (localImages.length > 0) {
-                                                                                uploadedUrls = await uploadImagesCooldownReportEvidence(booking.id!, localImages);
+                                                                                uploadedUrls = await uploadImagesCooldownResolveEvidence(booking.id!, localImages);
                                                                             }
 
                                                                             // Merge existing URLs with newly uploaded ones
@@ -1330,6 +1331,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
                                                                             await updateBooking(booking.id!, {
                                                                                 status: 5,
+                                                                                updatedAt: new Date(),
                                                                                 cooldownResolvedImageUrls: finalImageUrls,
                                                                                 cooldownResolvedRemark: data.remark,
                                                                                 cooldownStatus: BookingActivityType.SETTLER_UPDATE_COOLDOWN_REPORT_EVIDENCE,

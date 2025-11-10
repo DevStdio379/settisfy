@@ -1185,7 +1185,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                         </View>
                                     ) : status === 9.2 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>Settler Incoming to Resolve the Cooldown Report</Text>
+                                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Settler Incoming to Resolve the Cooldown Report</Text>
                                             <TouchableOpacity
                                                 style={{
                                                     backgroundColor: COLORS.primary,

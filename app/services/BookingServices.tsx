@@ -169,6 +169,9 @@ export const uploadImageIncompletionResolveEvidence = async (imageName: string, 
 export const uploadImagesCooldownReportEvidence = async (imageName: string, imagesUrl: string[]) =>
   uploadLocalUris(`cooldown_report_${imageName}`, imagesUrl);
 
+export const uploadImagesCooldownResolveEvidence = async (imageName: string, imagesUrl: string[]) =>
+  uploadLocalUris(`cooldown_resolve_${imageName}`, imagesUrl);
+
 // Create booking using RN Firebase (firestore())
 export const createBooking = async (bookingData: Booking) => {
   try {
