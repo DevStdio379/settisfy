@@ -11,7 +11,7 @@ import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { createReview, getReviewByBookingId, Review } from '../../services/ReviewServices';
-import { Booking, BookingActivityType, BookingActorType, BookingWithUser, deleteProblemReportByIndex, fetchSelectedBooking, subscribeToBookings, subscribeToOneBooking, updateBooking, uploadImageIncompletionEvidence, uploadImagesCompletionEvidence, uploadImagesCooldownReportEvidence, uploadNoteToSettlerImages } from '../../services/BookingServices';
+import { Booking, BookingActivityType, BookingActorType, BookingWithUser, fetchSelectedBooking, updateBooking, uploadImageIncompletionEvidence, uploadImagesCompletionEvidence, uploadImagesCooldownReportEvidence, uploadNoteToSettlerImages } from '../../services/BookingServices';
 import { getOrCreateChat } from '../../services/ChatServices';
 import Input from '../../components/Input/Input';
 import { fetchSelectedSettlerService, fetchSettlerServices, updateSettlerService } from '../../services/SettlerServiceServices';
@@ -759,7 +759,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                         setLoading(true);
                                                         if (booking.id) {
                                                             await updateBooking(booking.id, {
-                                                                status: 5,
+                                                                status: Number(booking.catalogueService.coolDownPeriodHours) > 0 ? 5 : 6,
                                                                 updatedAt: new Date(),
                                                                 incompletionReportImageUrls: deleteField(),
                                                                 incompletionReportRemark: deleteField(),
