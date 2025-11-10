@@ -26,6 +26,7 @@ import BookingTimeline from '../../components/BookingTimeline';
 import WarningCard from '../../components/Card/WarningCard';
 import InfoBar from '../../components/InfoBar';
 import AddressCard from '../../components/Card/AddressCard';
+import firestore from '@react-native-firebase/firestore';
 
 type MyBookingDetailsScreenProps = StackScreenProps<RootStackParamList, 'MyBookingDetails'>;
 
@@ -536,7 +537,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                 <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.black }} numberOfLines={1} ellipsizeMode="tail">{bookingWithSettlerProfiles[profileIndex].settlerProfile?.firstName} {bookingWithSettlerProfiles[profileIndex].settlerProfile?.lastName}</Text>
                                                                             </View>
                                                                         </TouchableOpacity>
-                                                                        <Text style={{ fontSize: 14, color: COLORS.black }}>{bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings === 0 ? 'No ratings' : `${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings} (${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.jobsCount})`}</Text>
+                                                                        <Text style={{ fontSize: 14, color: COLORS.black }}>{(!bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings || bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings === 0) ? 'No ratings' : `${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings} (${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.jobsCount})`}</Text>
                                                                     </View>
                                                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                                         <Ionicons name="chevron-forward-outline" size={25} color={COLORS.blackLight2} />
@@ -592,7 +593,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                             settlerFirstName: booking.acceptors[profileIndex].firstName,
                                                                             settlerLastName: booking.acceptors[profileIndex].lastName,
                                                                             serviceStartCode: Math.floor(1000000 + Math.random() * 9000000).toString(),
-                                                                            timeline: arrayUnion({
+                                                                            timeline: firestore.FieldValue.arrayUnion({
                                                                                 id: generateId(),
                                                                                 type: BookingActivityType.SETTLER_SELECTED,
                                                                                 timestamp: new Date(),
@@ -709,7 +710,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                 incompletionStatus: deleteField(),
                                                                 incompletionResolvedImageUrls: deleteField(),
                                                                 incompletionResolvedRemark: deleteField(),
-                                                                timeline: arrayUnion({
+                                                                timeline: firestore.FieldValue.arrayUnion({
                                                                     id: generateId(),
                                                                     type: BookingActivityType.CUSTOMER_CONFIRM_COMPLETION,
                                                                     timestamp: new Date(),
@@ -781,7 +782,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                 cooldownResolvedRemark: deleteField(),
                                                                 status: 6,
 
-                                                                timeline: arrayUnion({
+                                                                timeline: firestore.FieldValue.arrayUnion({
                                                                     id: generateId(),
                                                                     type: BookingActivityType.BOOKING_COMPLETED,
                                                                     timestamp: new Date(),
@@ -1065,7 +1066,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                         </View>
                                     ) : status === 8.2 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>Settler Incoming to Resolve the Incompletion</Text>
+                                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Settler Incoming to Resolve the Incompletion</Text>
                                             <TouchableOpacity
                                                 style={{
                                                     backgroundColor: COLORS.primary,
@@ -1361,7 +1362,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 )}
                                                 {index === 1 && (
                                                     <View>
-                                                        <View style={{  paddingTop: 15 }}>
+                                                        <View style={{ paddingTop: 15 }}>
                                                             <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Service Location:</Text>
                                                             <AddressCard selectedAddress={booking?.selectedAddress} />
                                                         </View>
@@ -1371,18 +1372,28 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                             remarkPlaceholder='e.g. Please be careful with the antique vase.'
                                                             initialImages={booking.notesToSettlerImageUrls || []}
                                                             initialRemark={booking.notesToSettler || ''}
-                                                            isEditable={loading ? false : true}
+                                                            isEditable={Number(booking.status) < 2 ? (loading ? false : true) : false}
+                                                            showSubmitButton={Number(booking.status) < 2 ? true : false}
                                                             buttonText={(loading ? ((booking.notesToSettlerImageUrls && booking.notesToSettlerImageUrls.length > 0) || (booking.notesToSettler && booking.notesToSettler.length > 0) ? 'Updating...' : 'Submitting') : ((booking.notesToSettlerImageUrls && booking.notesToSettlerImageUrls.length > 0) || (booking.notesToSettler && booking.notesToSettler.length > 0) ? 'Update Note To Settler' : 'Send Note to Settler'))}
                                                             onSubmit={async (data) => {
                                                                 setLoading(true);
-                                                                await uploadNoteToSettlerImages(booking.id!, data.images ?? []).then((urls => {
-                                                                    data.images = urls;
-                                                                }));
+
+                                                                // Separate local images (new uploads) from existing URLs
+                                                                const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                                const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                                let uploadedUrls: string[] = [];
+                                                                if (localImages.length > 0) {
+                                                                    uploadedUrls = await uploadNoteToSettlerImages(booking.id!, localImages);
+                                                                }
+
+                                                                // Merge existing URLs with newly uploaded ones
+                                                                const finalImageUrls = [...existingUrls, ...uploadedUrls];
 
                                                                 await updateBooking(booking.id!, {
                                                                     notesToSettler: data.remark,
-                                                                    notesToSettlerImageUrls: data.images,
-                                                                    timeline: arrayUnion({
+                                                                    notesToSettlerImageUrls: finalImageUrls,
+                                                                    timeline: firestore.FieldValue.arrayUnion({
                                                                         id: generateId(),
                                                                         type: BookingActivityType.NOTES_TO_SETTLER_UPDATED,
                                                                         timestamp: new Date(),
@@ -1390,7 +1401,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
                                                                         // additional info
                                                                         notesToSettler: data.remark,
-                                                                        notesToSettlerImageUrls: data.images,
+                                                                        notesToSettlerImageUrls: finalImageUrls,
                                                                     }),
                                                                 });
                                                                 onRefresh();
@@ -1420,21 +1431,30 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                             showSubmitButton={status === 8.1 ? true : false}
                                                             onSubmit={async (data) => {
                                                                 setLoading(true);
-                                                                await uploadImageIncompletionEvidence(booking.id!, data.images ?? []).then((urls => {
-                                                                    data.images = urls;
-                                                                }));
+
+                                                                // Separate local images (new uploads) from existing URLs
+                                                                const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                                const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                                let uploadedUrls: string[] = [];
+                                                                if (localImages.length > 0) {
+                                                                    uploadedUrls = await uploadImageIncompletionEvidence(booking.id!, localImages);
+                                                                }
+
+                                                                // Merge existing URLs with newly uploaded ones
+                                                                const finalImageUrls = [...existingUrls, ...uploadedUrls];
                                                                 await updateBooking(booking.id!, {
                                                                     status: 8,
-                                                                    incompletionReportImageUrls: data.images,
+                                                                    incompletionReportImageUrls: finalImageUrls,
                                                                     incompletionReportRemark: data.remark,
                                                                     incompletionStatus: booking.incompletionStatus ? (booking.incompletionStatus === BookingActivityType.JOB_INCOMPLETE ? BookingActivityType.CUSTOMER_JOB_INCOMPLETE_UPDATED : (booking.incompletionStatus === BookingActivityType.SETTLER_UPDATE_INCOMPLETION_EVIDENCE ? BookingActivityType.CUSTOMER_REJECT_INCOMPLETION_RESOLVE : BookingActivityType.JOB_INCOMPLETE)) : BookingActivityType.JOB_INCOMPLETE,
-                                                                    timeline: arrayUnion({
+                                                                    timeline: firestore.FieldValue.arrayUnion({
                                                                         id: generateId(),
                                                                         type: booking.incompletionStatus ? (booking.incompletionStatus === BookingActivityType.JOB_INCOMPLETE ? BookingActivityType.CUSTOMER_JOB_INCOMPLETE_UPDATED : (booking.incompletionStatus === BookingActivityType.SETTLER_UPDATE_INCOMPLETION_EVIDENCE ? BookingActivityType.CUSTOMER_REJECT_INCOMPLETION_RESOLVE : BookingActivityType.JOB_INCOMPLETE)) : BookingActivityType.JOB_INCOMPLETE,
                                                                         timestamp: new Date(),
 
                                                                         // additional info
-                                                                        incompletionReportImageUrls: data.images,
+                                                                        incompletionReportImageUrls: finalImageUrls,
                                                                         incompletionReportRemark: data.remark,
                                                                         isCompleted: false,
                                                                     }),
@@ -1471,21 +1491,32 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                             buttonText={loading ? ((booking.cooldownReportImageUrls && booking.cooldownReportImageUrls.length > 0) || (booking.cooldownReportRemark && booking.cooldownReportRemark.length > 0) ? 'Updating...' : 'Submitting...') : ((booking.cooldownReportImageUrls && booking.cooldownReportImageUrls.length > 0) || (booking.cooldownReportRemark && booking.cooldownReportRemark.length > 0) ? 'Update Report' : 'Submit Report')}
                                                             onSubmit={async (data) => {
                                                                 setLoading(true);
-                                                                await uploadImagesCooldownReportEvidence(booking.id!, data.images ?? []).then((urls => {
-                                                                    data.images = urls;
-                                                                }));
+
+                                                                // Separate local images (new uploads) from existing URLs
+                                                                const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                                const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                                let uploadedUrls: string[] = [];
+                                                                if (localImages.length > 0) {
+                                                                    uploadedUrls = await uploadImagesCooldownReportEvidence(booking.id!, localImages);
+                                                                }
+
+                                                                // Merge existing URLs with newly uploaded ones
+                                                                const finalImageUrls = [...existingUrls, ...uploadedUrls]
+
+
                                                                 await updateBooking(booking.id!, {
                                                                     status: 9,
-                                                                    cooldownReportImageUrls: data.images,
+                                                                    cooldownReportImageUrls: finalImageUrls,
                                                                     cooldownReportRemark: data.remark,
                                                                     cooldownStatus: booking.cooldownStatus ? (booking.cooldownStatus === BookingActivityType.COOLDOWN_REPORT_SUBMITTED ? BookingActivityType.CUSTOMER_COOLDOWN_REPORT_UPDATED : (booking.cooldownStatus === BookingActivityType.SETTLER_UPDATE_COOLDOWN_REPORT_EVIDENCE ? BookingActivityType.CUSTOMER_COOLDOWN_REPORT_NOT_RESOLVED : BookingActivityType.COOLDOWN_REPORT_SUBMITTED)) : BookingActivityType.COOLDOWN_REPORT_SUBMITTED,
-                                                                    timeline: arrayUnion({
+                                                                    timeline: firestore.FieldValue.arrayUnion({
                                                                         id: generateId(),
                                                                         type: booking.cooldownStatus ? (booking.cooldownStatus === BookingActivityType.COOLDOWN_REPORT_SUBMITTED ? BookingActivityType.CUSTOMER_COOLDOWN_REPORT_UPDATED : (booking.cooldownStatus === BookingActivityType.SETTLER_UPDATE_COOLDOWN_REPORT_EVIDENCE ? BookingActivityType.CUSTOMER_COOLDOWN_REPORT_NOT_RESOLVED : BookingActivityType.COOLDOWN_REPORT_SUBMITTED)) : BookingActivityType.COOLDOWN_REPORT_SUBMITTED,
                                                                         timestamp: new Date(),
 
                                                                         // additional info
-                                                                        cooldownReportImageUrls: data.images,
+                                                                        cooldownReportImageUrls: finalImageUrls,
                                                                         cooldownReportRemark: data.remark,
                                                                         isCompleted: false,
                                                                     }),

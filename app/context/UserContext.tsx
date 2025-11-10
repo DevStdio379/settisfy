@@ -36,7 +36,7 @@ export interface User {
 export interface UserContextType {
   user: User | null;
   createUser: (userData: User) => Promise<void>;
-  fetchSelectedUser: (uid: string) => Promise<void>;
+  fetchCurrentUser: (uid: string) => Promise<void>;
   fetchAllUsers: () => Promise<User[]>;
   updateUserData: (uid: string, updatedData: Partial<User>) => Promise<void>;
   fetchUsersByIds: (userIds: string[]) => Promise<User[]>;
@@ -109,7 +109,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const uid = await AsyncStorage.getItem('userUID');
         if (uid) {
-          await fetchSelectedUser(uid);
+          await fetchCurrentUser(uid);
           await updateUserData(uid, { isActive: true });
         } else {
           console.log("No userUID in storage.");
@@ -209,7 +209,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const fetchSelectedUser = async (uid: string) => {
+  const fetchCurrentUser = async (uid: string) => {
     try {
       const userRef = firestore().collection('users').doc(uid);
       const userDoc = await userRef.get();
@@ -347,34 +347,37 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       // Step 1: Delete Firestore user document
       await firestore().collection('users').doc(userId).delete();
-      console.log(`✅ Deleted Firestore document for user: ${userId}`);
+      console.log(`Deleted Firestore document for user: ${userId}`);
 
       // Step 2: Delete user from Firebase Authentication (only if it's the current user)
       const currentUser = auth().currentUser;
       if (currentUser && currentUser.uid === userId) {
         await currentUser.delete();
-        console.log(`✅ Deleted Firebase Auth user: ${userId}`);
+        console.log(`Deleted Firebase Auth user: ${userId}`);
       } else {
-        console.warn(`⚠️ Cannot delete Auth user ${userId}: not the current user`);
+        console.warn(`Cannot delete Auth user ${userId}: not the current user`);
       }
 
     } catch (error: any) {
       // If "requires recent login" error, handle it
       if (error.code === 'auth/requires-recent-login') {
-        console.error("❌ Deletion failed: requires recent login. Prompt user to reauthenticate.");
+        console.error("Deletion failed: requires recent login. Prompt user to reauthenticate.");
       } else {
-        console.error("❌ Error deleting user account:", error);
+        console.error("Error deleting user account:", error);
       }
       throw error;
     }
   };
 
   return (
-    <UserContext.Provider value={{ user, updateUserData, createUser, fetchSelectedUser, fetchAllUsers, fetchUsersByIds, deleteUserAccount }}>
+    <UserContext.Provider value={{ user, updateUserData, createUser, fetchCurrentUser, fetchAllUsers, fetchUsersByIds, deleteUserAccount }}>
       {children}
     </UserContext.Provider>
   );
 };
+
+// EXPORTED FUNCTION
+// Custom hook to use the UserContext
 
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
@@ -382,4 +385,49 @@ export const useUser = (): UserContextType => {
     throw new Error("useUser must be used within a UserProvider");
   }
   return context;
+};
+
+export const fetchSelectedUser = async (userId: string): Promise<User | null> => {
+  try {
+    const userDoc = await firestore().collection('users').doc(userId).get();
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+
+      if (!userData) {
+        console.error("⚠️ No data found for user:", userId);
+        return null;
+      }
+
+      const userInfo: User = {
+        uid: userData.uid ?? '',
+        email: userData.email ?? '',
+        userName: userData.userName ?? '',
+        isActive: userData.isActive ?? true,
+        firstName: userData.firstName ?? '',
+        lastName: userData.lastName ?? '',
+        phoneNumber: userData.phoneNumber ?? '',
+        accountType: userData.accountType ?? '',
+        isVerified: userData.isVerified ?? false,
+        profileImageUrl: userData.profileImageUrl ?? '',
+        createAt: userData.createAt ?? '',
+        updatedAt: userData.updatedAt ?? '',
+        memberFor: userData.createdAt
+          ? formatDistanceToNow(userData.createdAt.toDate(), { addSuffix: false })
+          : '',
+        currentAddress: userData.currentAddress ?? undefined,
+        currentPayment: userData.currentPayment ?? undefined,
+        activeJobs: userData.activeJobs ?? undefined,
+      };
+
+      console.log('✅ User fetched successfully:', userInfo.uid);
+      return userInfo;
+    } else {
+      console.warn('⚠️ User not found:', userId);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error fetching user data:', error);
+    throw error;
+  }
 };

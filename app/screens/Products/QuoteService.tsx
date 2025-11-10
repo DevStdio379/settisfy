@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, TouchableOpacity, FlatList, Animated, StyleSheet, Platform, Image, ScrollView,
+  View, Text, TouchableOpacity, Animated, StyleSheet, Platform, Image, ScrollView,
   Alert,
   ActionSheetIOS,
 } from "react-native";
@@ -9,25 +9,22 @@ import { StackScreenProps } from "@react-navigation/stack";
 import { RootStackParamList } from "../../navigation/RootStackParamList";
 import Swiper from "react-native-swiper";
 import { Calendar } from "react-native-calendars";
-import { format, set, setMonth } from "date-fns";
+import { format } from "date-fns";
 import { GlobalStyleSheet } from "../../constants/StyleSheet";
 import { fetchSelectedUser, useUser } from "../../context/UserContext";
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { Address, fetchUserAddresses } from "../../services/AddressServices";
-import Input from "../../components/Input/Input";
 import TabButtonStyleHome from "../../components/Tabs/TabButtonStyleHome";
 import { SubOption } from "../../services/CatalogueServices";
-import { CategoryDropdown } from "../../components/CategoryDropdown";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import { DynamicOption, updateCatalogue } from "../../services/CatalogueServices";
-import { fetchReviewsByCatalogueId, Review, ReviewWithUser } from "../../services/ReviewServices";
+import { fetchReviewsByCatalogueId, ReviewWithUser } from "../../services/ReviewServices";
 import ImageViewer from "../../components/ImageViewer";
 import FeedbackPills from "../../components/FeedbackPills";
 import { BookingActivityType, BookingActorType, createBooking, uploadNoteToSettlerImages, uploadPaymentEvidenceImages } from "../../services/BookingServices";
 import { generateId } from "../../helper/HelperFunctions";
 import AttachmentForm from "../../components/Forms/AttachmentForm";
-import { addDoc, arrayUnion, collection, doc, updateDoc } from "firebase/firestore";
-import { db } from "../../services/firebaseConfig";
+import firestore from '@react-native-firebase/firestore';
 
 type QuoteServiceScreenProps = StackScreenProps<RootStackParamList, "QuoteService">;
 
@@ -35,7 +32,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
   const [service, setService] = useState(route.params.service)
 
   // Payment Methods
-  type IoniconName = 
+  type IoniconName =
     | "cash-outline"
     | "card-outline"
     // add more icon names here as needed
@@ -48,20 +45,20 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
     text: string;
     label?: string;
   }> = [
-    {
-      image: "cash-outline",
-      title: "Cash upon Completion",
-      tag: "cash",
-      text: 'Borrower directly pays the owner upon pickup meetup',
-    },
-    {
-      label: 'Recommended',
-      image: "card-outline",
-      tag: "card",
-      title: "Credit / Debit Card",
-      text: "Stripe handles all payments securely. Sign-in",
-    },
-  ];
+      {
+        image: "cash-outline",
+        title: "Cash upon Completion",
+        tag: "cash",
+        text: 'Borrower directly pays the owner upon pickup meetup',
+      },
+      {
+        label: 'Recommended',
+        image: "card-outline",
+        tag: "card",
+        title: "Credit / Debit Card",
+        text: "Stripe handles all payments securely. Sign-in",
+      },
+    ];
 
   // States for selections
   const [selectedArea, setSelectedArea] = useState<number | null>(null);
@@ -73,7 +70,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
   const [index, setIndex] = useState(0);
   const { user } = useUser();
 
-  const [paymentMethod, setPaymentMethod] = useState<string | null>('N/A');
+  const [paymentMethod, setPaymentMethod] = useState<string | null>('Online Transfer');
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<Address | undefined>(user?.currentAddress);
   const [accordionOpen, setAccordionOpen] = useState<{ [key: string]: boolean }>({});
@@ -175,14 +172,6 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
     });
   };
 
-  const deleteImage = () => {
-    if (!selectedNotesToSettlerImageUrl) return;
-
-    const updatedImages = notesToSettlerImageUrls.filter((img) => img !== selectedNotesToSettlerImageUrl);
-    setNotesToSettlerImageUrls(updatedImages);
-    setSelectedNotesToSettlerImageUrl(updatedImages.length > 0 ? updatedImages[0] : null);
-  };
-
 
   // tabview
   const scrollViewHome = useRef<any>(null);
@@ -218,7 +207,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
         return;
       }
 
-      handleCheckout('borrowingRef1', 'paymentIntentId1');
+      handleCheckout('paymentIntentId1');
     }
   }
 
@@ -254,7 +243,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
 
 
   // checkout
-  const handleCheckout = async (borrowingRef: any, paymentIntentId: string) => {
+  const handleCheckout = async (paymentIntentId: string) => {
     setLoading(true);
     if (!selectedAddress || !paymentMethod) {
       Alert.alert('Error', 'Please select delivery and payment methods.');
@@ -318,46 +307,50 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
     };
 
     try {
-      const bookingRef = collection(db, 'bookings');
+      const bookingRef = firestore().collection('bookings');
 
       // Step 1: Create the booking first (without uploading images yet)
-      const docRef = await addDoc(bookingRef, bookingData);
+      const docRef = await bookingRef.add(bookingData);
       console.log('Booking created with ID:', docRef.id);
 
-      // Step 2: If notesToSettlerImageUrls exist (local file URIs or base64)
-      if (bookingData.notesToSettlerImageUrls && bookingData.notesToSettlerImageUrls.length > 0) {
-        // Upload the images and get back URLs
-        const uploadedUrls = await uploadNoteToSettlerImages(docRef.id, bookingData.notesToSettlerImageUrls);
+      // Step 2: Upload related images if available
+      const uploadedUrls =
+        bookingData.notesToSettlerImageUrls && bookingData.notesToSettlerImageUrls.length > 0
+          ? await uploadNoteToSettlerImages(docRef.id, bookingData.notesToSettlerImageUrls)
+          : [];
 
-        const paymentEvidenceUrls = bookingData.paymentEvidence && bookingData.paymentEvidence.length > 0
+      const paymentEvidenceUrls =
+        bookingData.paymentEvidence && bookingData.paymentEvidence.length > 0
           ? await uploadPaymentEvidenceImages(docRef.id, bookingData.paymentEvidence)
           : [];
 
-        // Step 3: Update the same booking doc with those URLs
-        await updateDoc(doc(db, 'bookings', docRef.id), {
+      // Step 3: Update booking with uploaded image URLs and timeline
+      await firestore().collection('bookings').doc(docRef.id).update({
+        notesToSettlerImageUrls: uploadedUrls,
+        paymentEvidence: paymentEvidenceUrls,
+        updatedAt: new Date(),
+        timeline: firestore.FieldValue.arrayUnion({
+          id: generateId(),
+          type: BookingActivityType.QUOTE_CREATED,
+          actor: BookingActorType.CUSTOMER,
+          timestamp: new Date(),
+          addons: bookingData.addons,
           notesToSettlerImageUrls: uploadedUrls,
+          notesToSettler: bookingData.notesToSettler,
           paymentEvidence: paymentEvidenceUrls,
-          updatedAt: new Date(),
+        }),
+      });
 
-          timeline: arrayUnion({
-            id: generateId(),
-            type: BookingActivityType.QUOTE_CREATED,
-            actor: BookingActorType.CUSTOMER,
-            timestamp: new Date(),
+      // Step 4: Update catalogue (FireStore)
+      await firestore().collection('catalogue').doc(service.id).update({
+        bookingsCount: (service.bookingsCount || 0) + 1,
+      });
 
-            // additional info
-            addons: bookingData.addons,
-            notesToSettlerImageUrls: uploadedUrls,
-            notesToSettler: notesToSettler,
-            paymentEvidence: paymentEvidenceUrls,
-          }),
-        });
-        await updateCatalogue(service.id || '', { bookingsCount: (service.bookingsCount || 0) + 1 });
-        navigation.navigate('PaymentSuccess', {
-          bookingId: docRef.id,
-          image: service.imageUrls[0],
-        });
-      };
+      // Step 5: Navigate to success page
+      navigation.navigate('PaymentSuccess', {
+        bookingId: docRef.id,
+        image: service.imageUrls[0],
+      });
     } catch (err: any) {
       console.error('createBooking error:', err);
       Alert.alert('Error', err?.message || 'Failed to create booking. Check logs for details.');
@@ -385,7 +378,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
           const reviewerData = await fetchSelectedUser(review.customerId);
           return {
             ...review,
-            reviewer: reviewerData
+            reviewer: reviewerData ?? null
           }
         })
       )

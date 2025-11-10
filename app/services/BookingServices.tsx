@@ -7,7 +7,6 @@ import { Address } from './AddressServices';
 import { Catalogue, DynamicOption } from './CatalogueServices';
 import { User } from '../context/UserContext';
 import { SettlerService } from './SettlerServiceServices';
-import { Alert } from 'react-native';
 
 export enum BookingActivityType {
   NOTES_TO_SETTLER_UPDATED = 'NOTES_TO_SETTLER_UPDATED',
@@ -351,16 +350,7 @@ export const fetchLendingsByUser = async (userID: string): Promise<Booking[]> =>
 export const updateBooking = async (bookingId: string, updatedData: Partial<any>) => {
   try {
     const bookingRef = firestore().collection('bookings').doc(bookingId);
-
-    if (updatedData.settlerEvidenceImageUrls && updatedData.settlerEvidenceImageUrls.length > 0) {
-      const uploadedUrls = await uploadImagesCompletionEvidence(bookingId, updatedData.settlerEvidenceImageUrls);
-      await bookingRef.update({
-        ...updatedData,
-        settlerEvidenceImageUrls: uploadedUrls,
-      });
-    } else {
-      await bookingRef.update(updatedData);
-    }
+    await bookingRef.update(updatedData);
     console.log('Booking updated with ID: ', bookingId);
   } catch (error) {
     console.error('Error updating booking: ', error);

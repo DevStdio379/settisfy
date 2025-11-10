@@ -10,7 +10,6 @@ import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { createReview, getReviewByBookingId, Review } from '../../services/ReviewServices';
 import { Booking, BookingActivityType, BookingActorType, fetchSelectedBooking, updateBooking, uploadImageIncompletionResolveEvidence, uploadImagesCompletionEvidence, uploadImagesCooldownReportEvidence } from '../../services/BookingServices';
-import { arrayUnion, deleteField } from 'firebase/firestore';
 import { getOrCreateChat } from '../../services/ChatServices';
 import Input from '../../components/Input/Input';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -24,6 +23,7 @@ import BookingTimeline from '../../components/BookingTimeline';
 import WarningCard from '../../components/Card/WarningCard';
 import InfoBar from '../../components/InfoBar';
 import AddressCard from '../../components/Card/AddressCard';
+import firestore from '@react-native-firebase/firestore';
 
 type MyRequestDetailsScreenProps = StackScreenProps<RootStackParamList, 'MyRequestDetails'>;
 
@@ -569,7 +569,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
                                                                 if (booking.id) {
                                                                     await updateBooking(booking.id, {
-                                                                        acceptors: arrayUnion({
+                                                                        acceptors: firestore.FieldValue.arrayUnion({
                                                                             settlerId: user?.uid,
                                                                             settlerServiceId: settlerServiceId,
                                                                             firstName: user?.firstName,
@@ -577,7 +577,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                                             acceptedAt: new Date() // cleaner than Date.toISOString
                                                                         }),
                                                                         // add timeline entry for auditing / history
-                                                                        timeline: arrayUnion({
+                                                                        timeline: firestore.FieldValue.arrayUnion({
                                                                             id: generateId(),
                                                                             type: BookingActivityType.SETTLER_ACCEPT,
                                                                             timestamp: new Date(),
@@ -622,7 +622,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                     setLoading(true);
                                                     await updateBooking(booking.id!, {
                                                         status: 2,
-                                                        timeline: arrayUnion({
+                                                        timeline: firestore.FieldValue.arrayUnion({
                                                             id: generateId(),
                                                             type: BookingActivityType.SETTLER_SERVICE_START,
                                                             timestamp: new Date(),
@@ -656,7 +656,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                     setLoading(true);
                                                     await updateBooking(booking.id!, {
                                                         status: 3,
-                                                        timeline: arrayUnion({
+                                                        timeline: firestore.FieldValue.arrayUnion({
                                                             id: generateId(),
                                                             type: BookingActivityType.SETTLER_SERVICE_END,
                                                             timestamp: new Date(),
@@ -756,7 +756,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                         await updateBooking(booking.id!, {
                                                             status: 8.2,
                                                             incompletionStatus: BookingActivityType.SETTLER_RESOLVE_INCOMPLETION,
-                                                            timeline: arrayUnion({
+                                                            timeline: firestore.FieldValue.arrayUnion({
                                                                 id: generateId(),
                                                                 type: BookingActivityType.SETTLER_RESOLVE_INCOMPLETION,
                                                                 actor: BookingActorType.SETTLER,
@@ -789,7 +789,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                             incompletionStatus: BookingActivityType.SETTLER_REJECT_INCOMPLETION,
                                                             status: 4,
 
-                                                            timeline: arrayUnion({
+                                                            timeline: firestore.FieldValue.arrayUnion({
                                                                 id: generateId(),
                                                                 type: BookingActivityType.SETTLER_REJECT_INCOMPLETION,
                                                                 actor: BookingActorType.SETTLER,
@@ -865,7 +865,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                         await updateBooking(booking.id!, {
                                                             status: 9.2,
                                                             cooldownStatus: BookingActivityType.SETTLER_RESOLVE_COOLDOWN_REPORT,
-                                                            timeline: arrayUnion({
+                                                            timeline: firestore.FieldValue.arrayUnion({
                                                                 id: generateId(),
                                                                 type: BookingActivityType.SETTLER_RESOLVE_COOLDOWN_REPORT,
                                                                 actor: BookingActorType.SETTLER,
@@ -898,7 +898,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                             cooldownStatus: BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT,
                                                             status: 5,
 
-                                                            timeline: arrayUnion({
+                                                            timeline: firestore.FieldValue.arrayUnion({
                                                                 id: generateId(),
                                                                 type: BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT,
                                                                 actor: BookingActorType.SETTLER,
@@ -1135,25 +1135,33 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                         buttonText={loading ? ((booking.settlerEvidenceImageUrls && booking.settlerEvidenceImageUrls.length > 0) || (booking.settlerEvidenceRemark && booking.settlerEvidenceRemark.length > 0) ? 'Updating...' : 'Submitting...') : ((booking.settlerEvidenceImageUrls && booking.settlerEvidenceImageUrls.length > 0) || (booking.settlerEvidenceRemark && booking.settlerEvidenceRemark.length > 0) ? 'Update Evidence' : 'Submit Evidence')}
                                                         onSubmit={async (data) => {
                                                             setLoading(true);
-                                                            await uploadImagesCompletionEvidence(booking.id!, data.images).then((urls) => {
-                                                                data.images = urls;
-                                                            });
+
+                                                            // Separate local images (new uploads) from existing URLs
+                                                            const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                            const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                            let uploadedUrls: string[] = [];
+                                                            if (localImages.length > 0) {
+                                                                uploadedUrls = await uploadImagesCompletionEvidence(booking.id!, localImages);
+                                                            }
+
+                                                            // Merge existing URLs with newly uploaded ones
+                                                            const finalImageUrls = [...existingUrls, ...uploadedUrls];
 
                                                             await updateBooking(booking.id!, {
                                                                 status: 4,
-                                                                settlerEvidenceImageUrls: data.images,
+                                                                settlerEvidenceImageUrls: finalImageUrls,
                                                                 settlerEvidenceRemark: data.remark,
-                                                                timeline: arrayUnion({
+                                                                timeline: firestore.FieldValue.arrayUnion({
                                                                     id: generateId(),
-                                                                    type: booking.settlerEvidenceImageUrls && booking.settlerEvidenceImageUrls.length > 0 ? BookingActivityType.SETTLER_EVIDENCE_UPDATED : BookingActivityType.SETTLER_EVIDENCE_SUBMITTED,
+                                                                    type: booking.settlerEvidenceImageUrls && booking.settlerEvidenceImageUrls.length > 0
+                                                                        ? BookingActivityType.SETTLER_EVIDENCE_UPDATED
+                                                                        : BookingActivityType.SETTLER_EVIDENCE_SUBMITTED,
                                                                     actor: BookingActorType.SETTLER,
                                                                     timestamp: new Date(),
-
-                                                                    // additional info
-                                                                    settlerEvidenceImageUrls: data.images,
+                                                                    settlerEvidenceImageUrls: finalImageUrls,
                                                                     settlerEvidenceRemark: data.remark,
                                                                 }),
-
                                                             });
                                                             onRefresh();
                                                         }}
@@ -1183,22 +1191,32 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                                         showSubmitButton={booking.incompletionStatus === BookingActivityType.SETTLER_RESOLVE_INCOMPLETION ? true : false}
                                                                         onSubmit={async (data) => {
                                                                             setLoading(true);
-                                                                            await uploadImageIncompletionResolveEvidence(booking.id!, data.images ?? []).then((urls => {
-                                                                                data.images = urls;
-                                                                            }));
+
+                                                                            // Separate local images (new uploads) from existing URLs
+                                                                            const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                                            const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                                            let uploadedUrls: string[] = [];
+                                                                            if (localImages.length > 0) {
+                                                                                uploadedUrls = await uploadImageIncompletionResolveEvidence(booking.id!, localImages);
+                                                                            }
+
+                                                                            // Merge existing URLs with newly uploaded ones
+                                                                            const finalImageUrls = [...existingUrls, ...uploadedUrls]
+
                                                                             await updateBooking(booking.id!, {
                                                                                 status: 4,
-                                                                                incompletionResolvedImageUrls: data.images,
+                                                                                incompletionResolvedImageUrls: finalImageUrls,
                                                                                 incompletionResolvedRemark: data.remark,
                                                                                 incompletionStatus: BookingActivityType.SETTLER_UPDATE_INCOMPLETION_EVIDENCE,
-                                                                                timeline: arrayUnion({
+                                                                                timeline: firestore.FieldValue.arrayUnion({
                                                                                     id: generateId(),
                                                                                     type: BookingActivityType.SETTLER_UPDATE_INCOMPLETION_EVIDENCE,
                                                                                     timestamp: new Date(),
                                                                                     actor: BookingActorType.SETTLER,
 
                                                                                     // additional info
-                                                                                    incompletionResolvedImageUrls: data.images,
+                                                                                    incompletionResolvedImageUrls: finalImageUrls,
                                                                                     incompletionResolvedRemark: data.remark,
                                                                                     isCompleted: false,
                                                                                 }),
@@ -1239,22 +1257,32 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                                         showSubmitButton={booking.cooldownStatus === BookingActivityType.SETTLER_RESOLVE_COOLDOWN_REPORT ? true : false}
                                                                         onSubmit={async (data) => {
                                                                             setLoading(true);
-                                                                            await uploadImagesCooldownReportEvidence(booking.id!, data.images ?? []).then((urls => {
-                                                                                data.images = urls;
-                                                                            }));
+
+                                                                            // Separate local images (new uploads) from existing URLs
+                                                                            const localImages = data.images.filter((uri) => !uri.startsWith('https://'));
+                                                                            const existingUrls = data.images.filter((uri) => uri.startsWith('https://'));
+
+                                                                            let uploadedUrls: string[] = [];
+                                                                            if (localImages.length > 0) {
+                                                                                uploadedUrls = await uploadImagesCooldownReportEvidence(booking.id!, localImages);
+                                                                            }
+
+                                                                            // Merge existing URLs with newly uploaded ones
+                                                                            const finalImageUrls = [...existingUrls, ...uploadedUrls]
+
                                                                             await updateBooking(booking.id!, {
                                                                                 status: 5,
-                                                                                cooldownResolvedImageUrls: data.images,
+                                                                                cooldownResolvedImageUrls: finalImageUrls,
                                                                                 cooldownResolvedRemark: data.remark,
                                                                                 cooldownStatus: BookingActivityType.SETTLER_UPDATE_COOLDOWN_REPORT_EVIDENCE,
-                                                                                timeline: arrayUnion({
+                                                                                timeline: firestore.FieldValue.arrayUnion({
                                                                                     id: generateId(),
                                                                                     type: BookingActivityType.SETTLER_UPDATE_COOLDOWN_REPORT_EVIDENCE,
                                                                                     timestamp: new Date(),
                                                                                     actor: BookingActorType.SETTLER,
 
                                                                                     // additional info
-                                                                                    cooldownResolvedImageUrls: data.images,
+                                                                                    cooldownResolvedImageUrls: finalImageUrls,
                                                                                     cooldownResolvedRemark: data.remark,
                                                                                     isCompleted: false,
                                                                                 }),
@@ -1538,7 +1566,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                 newManualQuotePrice: newManualQuotePrice,
                                 isQuoteUpdateSuccessful: false,
                                 status: 7,
-                                timeline: arrayUnion({
+                                timeline: firestore.FieldValue.arrayUnion({
                                     id: generateId(),
                                     actor: BookingActorType.SETTLER,
                                     type: BookingActivityType.SETTLER_QUOTE_UPDATED,

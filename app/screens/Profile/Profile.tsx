@@ -6,7 +6,7 @@ import { COLORS } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { useUser, defaultUser, User } from '../../context/UserContext';
+import { useUser } from '../../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
@@ -14,7 +14,7 @@ type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
 const Profile = ({ navigation }: ProfileScreenProps) => {
 
     const theme = useTheme();
-    const { user, updateUserData, fetchSelectedUser } = useUser();
+    const { user, updateUserData, fetchCurrentUser } = useUser();
     const { colors }: { colors: any } = theme;
 
     const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +22,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
 
     const fetchData = async () => {
         if (user) {
-            await fetchSelectedUser(user.uid);
+            await fetchCurrentUser(user.uid);
         }
 
         setLoading(false);

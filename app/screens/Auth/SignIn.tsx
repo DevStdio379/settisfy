@@ -18,7 +18,7 @@ const SignIn = ({ navigation }: SignInScreenProps) => {
 
     const theme = useTheme();
     const { colors }: { colors: any } = theme;
-    const { fetchSelectedUser, updateUserData } = useUser();
+    const { fetchCurrentUser, updateUserData } = useUser();
 
     const [isFocused, setisFocused] = useState(false);
     const [isFocused2, setisFocused2] = useState(false);
@@ -36,7 +36,7 @@ const SignIn = ({ navigation }: SignInScreenProps) => {
             if (!user) throw new Error("Sign-in failed. Please try again.");
 
             // Ensure user data is fetched & updated before navigation
-            await fetchSelectedUser(user.uid,);
+            await fetchCurrentUser(user.uid,);
             await updateUserData(user.uid, { isActive: true });
 
             await AsyncStorage.setItem('userUID', user.uid);
