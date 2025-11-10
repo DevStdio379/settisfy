@@ -1,4 +1,4 @@
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import firestore, { doc, FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 
 export interface SubOption {
@@ -25,6 +25,7 @@ export interface Catalogue {
   excludedServices: string;
   category: string;
   basePrice: number;
+  coolDownPeriodHours: number;
   dynamicOptions: DynamicOption[];
   isActive: boolean;
   bookingsCount: number;
@@ -108,6 +109,7 @@ const mapDocToCatalogue = (doc: FirebaseFirestoreTypes.DocumentSnapshot): Catalo
     excludedServices: data.excludedServices || '',
     category: data.category || '',
     basePrice: data.basePrice || 0,
+    coolDownPeriodHours: data.coolDownPeriodHours || 0,
     dynamicOptions: data.dynamicOptions || [],
     isActive: data.isActive ?? true,
     bookingsCount: data.bookingsCount || 0,
@@ -192,8 +194,19 @@ export const updateCatalogue = async (catalogueId: string, updatedCatalogue: Par
     const docRef = firestore().collection('catalogue').doc(catalogueId);
 
     if (updatedCatalogue.imageUrls?.length) {
-      const uploadedUrls = await uploadImages(catalogueId, updatedCatalogue.imageUrls);
-      await docRef.update({ ...updatedCatalogue, imageUrls: uploadedUrls });
+      // Separate local images (new uploads) from existing URLs
+      const localImages = updatedCatalogue.imageUrls.filter((uri) => !uri.startsWith('https://'));
+      const existingUrls = updatedCatalogue.imageUrls.filter((uri) => uri.startsWith('https://'));
+
+      let uploadedUrls: string[] = [];
+      if (localImages.length > 0) {
+        uploadedUrls = await uploadImages(docRef.id, localImages);
+      }
+
+      // Merge existing URLs with newly uploaded ones
+      const finalImageUrls = [...existingUrls, ...uploadedUrls];
+
+      await docRef.update({ ...updatedCatalogue, imageUrls: finalImageUrls });
     } else {
       await docRef.update({ ...updatedCatalogue, updateAt: firestore.FieldValue.serverTimestamp() });
     }

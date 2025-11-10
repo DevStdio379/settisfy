@@ -227,7 +227,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                             <Ionicons name='chevron-forward-outline' size={30} color={COLORS.blackLight} />
                         </View>
                     </TouchableOpacity>
-                    {user?.accountType === 'admin' && (
+                    {true && (
                         <View>
                             <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
                             <TouchableOpacity

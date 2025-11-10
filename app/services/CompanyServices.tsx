@@ -7,8 +7,8 @@ export interface Company {
   companyEmail: string;
   companyPhone: string;
   businessRegNo: string;
-  createdAt: FirebaseFirestoreTypes.Timestamp;
-  updatedAt: FirebaseFirestoreTypes.Timestamp;
+  createdAt: any;
+  updatedAt: any;
 }
 
 /**

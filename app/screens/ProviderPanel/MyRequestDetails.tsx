@@ -23,7 +23,7 @@ import BookingTimeline from '../../components/BookingTimeline';
 import WarningCard from '../../components/Card/WarningCard';
 import InfoBar from '../../components/InfoBar';
 import AddressCard from '../../components/Card/AddressCard';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { deleteField } from '@react-native-firebase/firestore';
 
 type MyRequestDetailsScreenProps = StackScreenProps<RootStackParamList, 'MyRequestDetails'>;
 
@@ -59,6 +59,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: SubOption[] }>({});
     const [newManualQuoteDescription, setNewManualQuotationDescription] = useState<string>();
     const [newManualQuotePrice, setNewManualQuotationPrice] = useState<number>(0);
+    const [timeLeft, setTimeLeft] = useState<number>(0);
 
     const CODE_LENGTH = 7;
     const [collectionCode, setCollectionCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
@@ -166,75 +167,122 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
         setLoading(false);
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (booking) {
-                setImages(booking.catalogueService.imageUrls);
-                setSelectedImage(booking.catalogueService.imageUrls[0]);
-                setBooking(booking);
+    const fetchData = async () => {
+        if (booking) {
+            setImages(booking.catalogueService.imageUrls);
+            setSelectedImage(booking.catalogueService.imageUrls[0]);
+            setBooking(booking);
 
-                const formatted: { [key: string]: SubOption[] } = {};
+            const formatted: { [key: string]: SubOption[] } = {};
 
-                if (booking.addons) {
-                    booking.addons.forEach((cat: DynamicOption) => {
-                        formatted[cat.name] = cat.subOptions;
-                    });
-                }
-
-                setSelectedAddons(formatted);
-
-                if (booking.settlerEvidenceImageUrls.length !== 0) {
-                    setSettlerEvidenceImageUrls(booking.settlerEvidenceImageUrls);
-                    setSelectedSettlerEvidenceImageUrl(booking.settlerEvidenceImageUrls[0])
-                    setSettlerEvidenceRemark(booking.settlerEvidenceRemark)
-                }
-
-                if (booking.notesToSettlerImageUrls) {
-                    setSelectedNotesToSettlerImageUrl(booking.notesToSettlerImageUrls[0])
-                }
-
-                if (booking.incompletionReportImageUrls) {
-                    setIncompletionImageUrls(booking.incompletionReportImageUrls);
-                    setSelectedIncompletionImageUrl(booking.incompletionReportImageUrls[0])
-                }
-
-                const selectedBooking = await fetchSelectedBooking(booking.id || 'undefined');
-                if (selectedBooking) {
-                    const fetchedCustomer = await fetchSelectedUser(selectedBooking.userId);
-                    if (fetchedCustomer) {
-                        setCustomer(fetchedCustomer);
-                    }
-
-                    const fetchedReview = await getReviewByBookingId(selectedBooking.id || 'undefined');
-                    if (fetchedReview && fetchedReview.id) {
-                        setReview(fetchedReview);
-                    }
-                }
-
-                if (booking.addons) {
-                    const cloned = booking.addons.map(addon => ({
-                        ...addon,
-                        subOptions: addon.subOptions.map(opt => ({
-                            ...opt,
-                            jobCompleted: opt.isCompleted ?? true, // ✅ Default to true if undefined
-                        })),
-                    }));
-                    setLocalAddons(cloned);
-                }
-
-                const basePrice = booking.catalogueService?.basePrice ?? 0;
-
-                const addonsTotal =
-                    booking.addons
-                        ?.flatMap(a => a.subOptions)
-                        .filter(opt => opt.isCompleted)
-                        .reduce((sum, opt) => sum + Number(opt.additionalPrice || 0), 0) ?? 0;
-
-                setLocalTotal(Number(basePrice) + Number(addonsTotal) + 2);
+            if (booking.addons) {
+                booking.addons.forEach((cat: DynamicOption) => {
+                    formatted[cat.name] = cat.subOptions;
+                });
             }
+
+            setSelectedAddons(formatted);
+
+            if (booking.settlerEvidenceImageUrls.length !== 0) {
+                setSettlerEvidenceImageUrls(booking.settlerEvidenceImageUrls);
+                setSelectedSettlerEvidenceImageUrl(booking.settlerEvidenceImageUrls[0])
+                setSettlerEvidenceRemark(booking.settlerEvidenceRemark)
+            }
+
+            if (booking.notesToSettlerImageUrls) {
+                setSelectedNotesToSettlerImageUrl(booking.notesToSettlerImageUrls[0])
+            }
+
+            if (booking.incompletionReportImageUrls) {
+                setIncompletionImageUrls(booking.incompletionReportImageUrls);
+                setSelectedIncompletionImageUrl(booking.incompletionReportImageUrls[0])
+            }
+
+            const selectedBooking = await fetchSelectedBooking(booking.id || 'undefined');
+            if (selectedBooking) {
+                const fetchedCustomer = await fetchSelectedUser(selectedBooking.userId);
+                if (fetchedCustomer) {
+                    setCustomer(fetchedCustomer);
+                }
+
+                const fetchedReview = await getReviewByBookingId(selectedBooking.id || 'undefined');
+                if (fetchedReview && fetchedReview.id) {
+                    setReview(fetchedReview);
+                }
+            }
+
+            if (booking.addons) {
+                const cloned = booking.addons.map(addon => ({
+                    ...addon,
+                    subOptions: addon.subOptions.map(opt => ({
+                        ...opt,
+                        jobCompleted: opt.isCompleted ?? true, // ✅ Default to true if undefined
+                    })),
+                }));
+                setLocalAddons(cloned);
+            }
+
+            const basePrice = booking.catalogueService?.basePrice ?? 0;
+
+            const addonsTotal =
+                booking.addons
+                    ?.flatMap(a => a.subOptions)
+                    .filter(opt => opt.isCompleted)
+                    .reduce((sum, opt) => sum + Number(opt.additionalPrice || 0), 0) ?? 0;
+
+            setLocalTotal(Number(basePrice) + Number(addonsTotal) + 2);
         }
-        fetchData();
+    }
+
+    useEffect(() => {
+        if (!booking?.updatedAt || !booking?.catalogueService.coolDownPeriodHours) return;
+
+        const cooldownMs = booking.catalogueService.coolDownPeriodHours * 60 * 60 * 1000;
+
+        // ✅ Handle both Firestore Timestamp and native Date
+        const updatedAt =
+            booking.updatedAt?.toDate?.() instanceof Date
+                ? booking.updatedAt.toDate()
+                : new Date(booking.updatedAt);
+
+        const startTime = updatedAt.getTime();
+        const endTime = startTime + cooldownMs;
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const remaining = endTime - now;
+
+            if (remaining <= 0) {
+                setTimeLeft(0);
+                clearInterval(timer);
+                // Auto-complete booking when cooldown ends
+                if (booking.status !== 6 && booking.id) {
+                    updateBooking(booking.id, {
+                        cooldownReportImageUrls: deleteField(),
+                        cooldownReportRemark: deleteField(),
+                        cooldownStatus: deleteField(),
+                        cooldownResolvedImageUrls: deleteField(),
+                        cooldownResolvedRemark: deleteField(),
+                        status: 6,
+                        timeline: firestore.FieldValue.arrayUnion({
+                            id: generateId(),
+                            type: BookingActivityType.BOOKING_COMPLETED,
+                            timestamp: new Date(),
+                            actor: BookingActorType.SYSTEM,
+                        }),
+                    });
+                    onRefresh?.();
+                }
+            } else {
+                setTimeLeft(remaining);
+            }
+        };
+
+        updateTimer();
+        const timer = setInterval(updateTimer, 1000);
         setStatus(Number(booking.status));
+        fetchData();
+        return () => clearInterval(timer);
     }, [booking]);
 
     useEffect(() => {
@@ -268,7 +316,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
         { label: "Settler\nSelected", date: "Check\nservice code", completed: (status ?? 0) >= 1 },
         { label: "Active\nService", date: "\n", completed: (status ?? 0) >= 2 },
         { label: "Service\nCompleted", date: "Evaluate\ncompletion", completed: (status ?? 0) >= 4 },
-        { label: "Booking\nCompleted", date: 'Release\npayment', completed: (status ?? 0) >= 5 },
+        { label: "Booking\nCompleted", date: 'Release\npayment', completed: (status ?? 0) >= 6 },
     ];
 
     const actions = [
@@ -276,6 +324,14 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
         { buttonTitle: 'Adjust Quotation', onPressAction: () => { setSubScreenIndex(2) } },
         { buttonTitle: 'Contact Support', onPressAction: () => Alert.alert('Contact Support Pressed') },
     ];
+
+    const formatTime = (ms: number) => {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours}h ${minutes}m ${seconds}s`;
+    };
 
     const greetings = 'Hi there, thank you for your rent. We hope that you can take the advantage of this item during your borrowing period Beforehand, here’s the information that you might need during your borrowing terms.';
 
@@ -656,6 +712,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                     setLoading(true);
                                                     await updateBooking(booking.id!, {
                                                         status: 3,
+                                                        updatedAt: new Date(),
                                                         timeline: firestore.FieldValue.arrayUnion({
                                                             id: generateId(),
                                                             type: BookingActivityType.SETTLER_SERVICE_END,
@@ -696,8 +753,9 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in cooldown period</Text>
                                             <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Customer will review your job completion and wait for the latecoming issues if exist.</Text>
+                                            {/* Countdown Display */}
                                             <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
-                                                {booking?.selectedDate ? `${Math.ceil((new Date(booking.selectedDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left` : "N/A"}
+                                                {timeLeft > 0 ? formatTime(timeLeft) : "Cooldown finished"}
                                             </Text>
                                             <TouchableOpacity
                                                 style={{

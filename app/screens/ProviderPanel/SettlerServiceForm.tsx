@@ -30,7 +30,7 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
   const [serviceStartTime, setServiceStartTime] = useState<string>('');
   const [serviceEndTime, setServiceEndTime] = useState<string>('');
 
-  const [selectedLocation, setSelectedLocation] = useState<string>('');;
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
 
   const [refreshing, setRefreshing] = useState(false);
   const [isFocused2, setisFocused2] = useState(false);
@@ -578,7 +578,7 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     <Ionicons name="chevron-forward-outline" size={26} color={COLORS.blackLight} style={{ margin: 5 }} />
                   </TouchableOpacity>
                 </View>
-                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Job active status:</Text>
+                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Job Availability Status:</Text>
                 <CategoryDropdown
                   options={[
                     { label: 'Active', value: 'Yes' },

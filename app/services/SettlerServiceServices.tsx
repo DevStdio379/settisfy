@@ -18,7 +18,6 @@ export interface SettlerService {
   serviceEndTime: string;
 
   serviceLocation: string;
-
   qualifications: string[];
   isActive: boolean;
   jobsCount: number;

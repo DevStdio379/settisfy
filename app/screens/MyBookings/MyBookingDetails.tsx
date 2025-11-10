@@ -16,7 +16,6 @@ import { getOrCreateChat } from '../../services/ChatServices';
 import Input from '../../components/Input/Input';
 import { fetchSelectedSettlerService, fetchSettlerServices, updateSettlerService } from '../../services/SettlerServiceServices';
 import { DynamicOption, fetchSelectedCatalogue, updateCatalogue } from '../../services/CatalogueServices';
-import { arrayUnion, deleteField, doc } from 'firebase/firestore';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { formatAnyTimestamp, generateId } from '../../helper/HelperFunctions';
 import { db } from '../../services/firebaseConfig';
@@ -26,7 +25,7 @@ import BookingTimeline from '../../components/BookingTimeline';
 import WarningCard from '../../components/Card/WarningCard';
 import InfoBar from '../../components/InfoBar';
 import AddressCard from '../../components/Card/AddressCard';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { deleteField } from '@react-native-firebase/firestore';
 
 type MyBookingDetailsScreenProps = StackScreenProps<RootStackParamList, 'MyBookingDetails'>;
 
@@ -42,6 +41,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
     const [images, setImages] = useState<string[]>([]);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [status, setStatus] = useState<number>(Number(booking.status));
+    const [timeLeft, setTimeLeft] = useState<number>(0);
 
     const scrollViewHome = useRef<any>(null);
     const [isFocused, setisFocused] = useState(false);
@@ -182,10 +182,56 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
 
     useEffect(() => {
-        if (!booking || !booking.id) return;
+        if (!booking?.updatedAt || !booking?.catalogueService.coolDownPeriodHours) return;
+
+        const cooldownMs = booking.catalogueService.coolDownPeriodHours * 60 * 60 * 1000;
+
+        // ✅ Handle both Firestore Timestamp and native Date
+        const updatedAt =
+            booking.updatedAt?.toDate?.() instanceof Date
+                ? booking.updatedAt.toDate()
+                : new Date(booking.updatedAt);
+
+        const startTime = updatedAt.getTime();
+        const endTime = startTime + cooldownMs;
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const remaining = endTime - now;
+
+            if (remaining <= 0) {
+                setTimeLeft(0);
+                clearInterval(timer);
+                // Auto-complete booking when cooldown ends
+                if (booking.status !== 6 && booking.id) {
+                    updateBooking(booking.id, {
+                        cooldownReportImageUrls: deleteField(),
+                        cooldownReportRemark: deleteField(),
+                        cooldownStatus: deleteField(),
+                        cooldownResolvedImageUrls: deleteField(),
+                        cooldownResolvedRemark: deleteField(),
+                        status: 6,
+                        timeline: firestore.FieldValue.arrayUnion({
+                            id: generateId(),
+                            type: BookingActivityType.BOOKING_COMPLETED,
+                            timestamp: new Date(),
+                            actor: BookingActorType.SYSTEM,
+                        }),
+                    });
+                    onRefresh?.();
+                }
+            } else {
+                setTimeLeft(remaining);
+            }
+        };
+
+        updateTimer();
+        const timer = setInterval(updateTimer, 1000);
         setStatus(Number(booking.status));
         fetchData();
+        return () => clearInterval(timer);
     }, [booking]);
+
 
 
     const onRefresh = useCallback(() => {
@@ -206,7 +252,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
         { label: "Settler\nSelected", date: "Check\nservice code", completed: (status ?? 0) >= 1 },
         { label: "Active\nService", date: "\n", completed: (status ?? 0) >= 2 },
         { label: "Service\nCompleted", date: "Evaluate\ncompletion", completed: (status ?? 0) >= 4 },
-        { label: "Booking\nCompleted", date: 'Release\npayment', completed: (status ?? 0) >= 5 },
+        { label: "Booking\nCompleted", date: 'Release\npayment', completed: (status ?? 0) >= 6 },
     ];
 
     const actions = [
@@ -248,6 +294,15 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
     const handleReleasePayment = async () => {
         return { success: true, data: {} };
     }
+
+    // Format milliseconds to h/m/s
+    const formatTime = (ms: number) => {
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours}h ${minutes}m ${seconds}s`;
+    };
 
     return (
         <View style={{ backgroundColor: COLORS.background, flex: 1 }}>
@@ -705,6 +760,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                         if (booking.id) {
                                                             await updateBooking(booking.id, {
                                                                 status: 5,
+                                                                updatedAt: new Date(),
                                                                 incompletionReportImageUrls: deleteField(),
                                                                 incompletionReportRemark: deleteField(),
                                                                 incompletionStatus: deleteField(),
@@ -737,10 +793,6 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                     alignItems: 'center',
                                                 }}
                                                 onPress={async () => {
-                                                    // if (booking.id) {
-                                                    //     await updateBooking(booking.id, { status: status! + 1, serviceEndCode: Math.floor(1000000 + Math.random() * 9000000).toString() });
-                                                    // }
-                                                    // setStatus(status! + 1);
                                                     onClick(2);
                                                     onClickHeader(2);
                                                     setActiveIndex(2);
@@ -756,10 +808,16 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                                                 <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in cooldown period.</Text>
-                                                <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Take this time to review the service and let us know if something doesn’t look right.</Text>
-                                                <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
-                                                    {booking?.selectedDate ? `${Math.ceil((new Date(booking.selectedDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left` : "N/A"}
+                                                <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>
+                                                    Take this time to review the service and let us know if something doesn’t look right.
                                                 </Text>
+
+                                                {/* Countdown Display */}
+                                                <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
+                                                    {timeLeft > 0 ? formatTime(timeLeft) : "Cooldown finished"}
+                                                </Text>
+
+                                                {/* Manual Complete Button */}
                                                 <TouchableOpacity
                                                     disabled={loading}
                                                     style={{
@@ -781,20 +839,23 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                 cooldownResolvedImageUrls: deleteField(),
                                                                 cooldownResolvedRemark: deleteField(),
                                                                 status: 6,
-
                                                                 timeline: firestore.FieldValue.arrayUnion({
                                                                     id: generateId(),
                                                                     type: BookingActivityType.BOOKING_COMPLETED,
                                                                     timestamp: new Date(),
                                                                     actor: BookingActorType.CUSTOMER,
-                                                                })
+                                                                }),
                                                             });
+                                                            onRefresh?.();
                                                         }
-                                                        onRefresh();
                                                     }}
                                                 >
-                                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>{loading ? 'Marking Service as Completed...' : 'Mark Service as Completed'}</Text>
+                                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>
+                                                        {loading ? 'Marking Service as Completed...' : 'Mark Service as Completed'}
+                                                    </Text>
                                                 </TouchableOpacity>
+
+                                                {/* Report Problem Button */}
                                                 <TouchableOpacity
                                                     style={{
                                                         width: '80%',
@@ -813,42 +874,6 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                     </View>
                                                 </TouchableOpacity>
                                             </View>
-                                            {/* HOLD DULU BIAR LE BEI DECIDE */}
-                                            {/* <View style={[GlobalStyleSheet.line, { marginVertical: 10 }]} />
-                                            <Text style={{ fontWeight: 'bold' }}>Release payment to settler?</Text>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-                                                <TouchableOpacity
-                                                    style={{
-                                                        backgroundColor: COLORS.primary,
-                                                        padding: 10,
-                                                        borderRadius: 10,
-                                                        marginVertical: 10,
-                                                        width: '40%',
-                                                        alignItems: 'center',
-                                                    }}
-                                                    onPress={() => { }}
-                                                >
-                                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>No</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    style={{
-                                                        backgroundColor: COLORS.primary,
-                                                        padding: 10,
-                                                        borderRadius: 10,
-                                                        marginVertical: 10,
-                                                        width: '40%',
-                                                        alignItems: 'center',
-                                                    }}
-                                                    onPress={async () => {
-                                                        if (booking.id) {
-                                                            await updateBooking(booking.id, { status: 6 });
-                                                        }
-                                                        setStatus(6);
-                                                    }}
-                                                >
-                                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>Yes</Text>
-                                                </TouchableOpacity>
-                                            </View> */}
                                         </View>
                                     ) : status === 6 || status === 10 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
@@ -1372,8 +1397,8 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                             remarkPlaceholder='e.g. Please be careful with the antique vase.'
                                                             initialImages={booking.notesToSettlerImageUrls || []}
                                                             initialRemark={booking.notesToSettler || ''}
-                                                            isEditable={Number(booking.status) < 2 ? (loading ? false : true) : false}
-                                                            showSubmitButton={Number(booking.status) < 2 ? true : false}
+                                                            isEditable={Number(booking.status) < 1 ? (loading ? false : true) : false}
+                                                            showSubmitButton={Number(booking.status) < 1 ? true : false}
                                                             buttonText={(loading ? ((booking.notesToSettlerImageUrls && booking.notesToSettlerImageUrls.length > 0) || (booking.notesToSettler && booking.notesToSettler.length > 0) ? 'Updating...' : 'Submitting') : ((booking.notesToSettlerImageUrls && booking.notesToSettlerImageUrls.length > 0) || (booking.notesToSettler && booking.notesToSettler.length > 0) ? 'Update Note To Settler' : 'Send Note to Settler'))}
                                                             onSubmit={async (data) => {
                                                                 setLoading(true);
