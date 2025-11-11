@@ -1,7 +1,7 @@
 import React, { use, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
 import { Alert, Platform } from 'react-native';
+import firestore from '@react-native-firebase/firestore';
 
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -39,20 +39,9 @@ export default function App() {
     }
   }
 
-  const getFcmToken = async () => {
-    const fcmToken = await messaging().getToken();
-    if (fcmToken) {
-      console.log('Your Firebase Cloud Messaging Token is:', fcmToken);
-    } else {
-      Alert.alert('FCM Token', 'Failed to get FCM token');
-      console.log('Failed to get FCM token');
-    }
-  }
-
   useEffect(() => {
     requestLocationPermission();
     requestUserPermission();
-    getFcmToken();
   }, []);
 
   return (

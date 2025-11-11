@@ -7,6 +7,8 @@ import storage from '@react-native-firebase/storage';
 import { formatDistanceToNow } from "date-fns";
 import { Address } from "../services/AddressServices";
 import { Payment } from "../services/PaymentServices";
+import messaging from '@react-native-firebase/messaging';
+import { Alert } from "react-native";
 
 
 interface ActiveJob {
@@ -56,6 +58,31 @@ export const defaultUser: User = {
   createAt: "Feb 6, 2025, 12:24:09 PM",
   updatedAt: "Feb 6, 2025, 12:24:09 PM",
   memberFor: "1 year",
+};
+
+const getFcmToken = async (userId: string) => {
+  try {
+    const fcmToken = await messaging().getToken();
+    if (!fcmToken || !userId) {
+      Alert.alert('FCM Token', 'Failed to get FCM token');
+      console.log('Failed to get FCM token');
+      return;
+    }
+
+    const userRef = firestore().collection('users').doc(userId);
+
+    // Use arrayUnion to add token if it doesn't already exist
+    await userRef.set(
+      {
+        fcmTokens: firestore.FieldValue.arrayUnion(fcmToken),
+      },
+      { merge: true }
+    );
+
+    console.log('Your Firebase Cloud Messaging Token is:', fcmToken);
+  } catch (err) {
+    console.log('Error getting FCM token:', err);
+  }
 };
 
 // Function to upload a single image to Firebase Storage (React Native Firebase version)
@@ -111,6 +138,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (uid) {
           await fetchCurrentUser(uid);
           await updateUserData(uid, { isActive: true });
+          await getFcmToken(uid);
         } else {
           console.log("No userUID in storage.");
         }
