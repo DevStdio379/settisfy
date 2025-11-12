@@ -28,7 +28,7 @@ const BookingAddReview = ({ navigation, route }: BookingAddReviewScreenProps) =>
 
     const [isFocused1, setisFocused1] = useState(false);
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const toggleCollectionFeedback = (customerFeedback: string) => {
         setCustomerFeedback((prevCollectionFeedback) =>

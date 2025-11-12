@@ -235,54 +235,57 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     }
 
     useEffect(() => {
-        if (!booking?.updatedAt || !booking?.catalogueService.coolDownPeriodHours) return;
+        if (booking?.updatedAt && booking.status === 5 && booking?.catalogueService.coolDownPeriodHours) {
+            const cooldownMs = booking.catalogueService.coolDownPeriodHours * 60 * 60 * 1000;
 
-        const cooldownMs = booking.catalogueService.coolDownPeriodHours * 60 * 60 * 1000;
+            // ✅ Handle both Firestore Timestamp and native Date
+            const updatedAt =
+                booking.updatedAt?.toDate?.() instanceof Date
+                    ? booking.updatedAt.toDate()
+                    : new Date(booking.updatedAt);
 
-        // ✅ Handle both Firestore Timestamp and native Date
-        const updatedAt =
-            booking.updatedAt?.toDate?.() instanceof Date
-                ? booking.updatedAt.toDate()
-                : new Date(booking.updatedAt);
+            const startTime = updatedAt.getTime();
+            const endTime = startTime + cooldownMs;
 
-        const startTime = updatedAt.getTime();
-        const endTime = startTime + cooldownMs;
+            const updateTimer = () => {
+                const now = Date.now();
+                const remaining = endTime - now;
 
-        const updateTimer = () => {
-            const now = Date.now();
-            const remaining = endTime - now;
-
-            if (remaining <= 0) {
-                setTimeLeft(0);
-                clearInterval(timer);
-                // Auto-complete booking when cooldown ends
-                if (booking.status !== 6 && booking.id) {
-                    updateBooking(booking.id, {
-                        cooldownReportImageUrls: deleteField(),
-                        cooldownReportRemark: deleteField(),
-                        cooldownStatus: deleteField(),
-                        cooldownResolvedImageUrls: deleteField(),
-                        cooldownResolvedRemark: deleteField(),
-                        status: 6,
-                        timeline: firestore.FieldValue.arrayUnion({
-                            id: generateId(),
-                            type: BookingActivityType.BOOKING_COMPLETED,
-                            timestamp: new Date(),
-                            actor: BookingActorType.SYSTEM,
-                        }),
-                    });
-                    onRefresh?.();
+                if (remaining <= 0) {
+                    setTimeLeft(0);
+                    clearInterval(timer);
+                    // Auto-complete booking when cooldown ends
+                    if (booking.status !== 6 && booking.id) {
+                        updateBooking(booking.id, {
+                            cooldownReportImageUrls: deleteField(),
+                            cooldownReportRemark: deleteField(),
+                            cooldownStatus: deleteField(),
+                            cooldownResolvedImageUrls: deleteField(),
+                            cooldownResolvedRemark: deleteField(),
+                            status: 6,
+                            timeline: firestore.FieldValue.arrayUnion({
+                                id: generateId(),
+                                type: BookingActivityType.BOOKING_COMPLETED,
+                                timestamp: new Date(),
+                                actor: BookingActorType.SYSTEM,
+                            }),
+                        });
+                        onRefresh?.();
+                    }
+                } else {
+                    setTimeLeft(remaining);
                 }
-            } else {
-                setTimeLeft(remaining);
-            }
+            };
+
+            updateTimer();
+            const timer = setInterval(updateTimer, 1000);
+            setStatus(Number(booking.status));
+            fetchData();
+            return () => clearInterval(timer);
+        } else {
+            fetchData();
         };
 
-        updateTimer();
-        const timer = setInterval(updateTimer, 1000);
-        setStatus(Number(booking.status));
-        fetchData();
-        return () => clearInterval(timer);
     }, [booking]);
 
     useEffect(() => {
@@ -300,6 +303,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     // status info:
     // 0.1: reviewing booking (check payment)
     // 0: new booking
+    // 0.2: settler accepted
     // 2: active booking
     // 3: job completed
     // 1-6 : ok flow
@@ -594,7 +598,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
                                 {/* Action Card */}
                                 <View style={{ backgroundColor: "#f3f3f3", padding: 16, borderRadius: 12, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, marginVertical: 10, marginHorizontal: 10 }}>
-                                    {status === 0 ? (
+                                    {status === 0 || status === 0.2 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             {userAlreadyAccepted ? (
                                                 <Text style={{ color: "green", textAlign: 'center' }}>You already accepted this job, Wait for customer respond.</Text>
@@ -646,7 +650,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                                             firstName: user?.firstName,
                                                                             lastName: user?.lastName,
                                                                         }),
-                                                                        status: 0,
+                                                                        status: 0.2,
                                                                     });
                                                                     onRefresh();
                                                                 }
@@ -694,9 +698,6 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                     ) : status === 2 && booking.settlerId === user?.uid ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4, textAlign: 'center' }}>Service in progress</Text>
-                                            <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
-                                                {booking?.selectedDate ? `${Math.ceil((new Date(booking.selectedDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days left` : "N/A"}
-                                            </Text>
                                             <TouchableOpacity
                                                 disabled={loading}
                                                 style={{

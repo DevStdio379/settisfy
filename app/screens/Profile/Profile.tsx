@@ -246,18 +246,32 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                         </View>
                     )}
                     <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
-                    <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'flex-start', marginBottom: 15, alignItems: 'center' }]} >
-                        <View style={[styles.cardimg]} >
-                            <Ionicons name='help-circle' size={30} color={colors.title} />
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {}}>
+                        <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
+                                <View style={[styles.cardimg]} >
+                                    <Ionicons name='help-circle' size={30} color={colors.title} />
+                                </View>
+                                <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>FAQs</Text>
+                            </View>
+                            <Ionicons name='open-outline' size={30} color={COLORS.blackLight} />
                         </View>
-                        <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>FAQs</Text>
-                    </View>
-                    <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'flex-start', marginBottom: 15, alignItems: 'center' }]} >
-                        <View style={[styles.cardimg]} >
-                            <Ionicons name='information-circle' size={30} color={colors.title} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {}}>
+                        <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
+                                <View style={[styles.cardimg]} >
+                                    <Ionicons name='information-circle' size={30} color={colors.title} />
+                                </View>
+                                <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>Support</Text>
+                            </View>
+                            <Ionicons name='open-outline' size={30} color={COLORS.blackLight} />
                         </View>
-                        <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>Customer Support</Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
                     <TouchableOpacity
                         activeOpacity={0.8}
