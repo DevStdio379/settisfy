@@ -11,6 +11,7 @@ import {
 import { Booking, BookingActivityType } from '../services/BookingServices';
 import BookingSummaryCard from './BookingSummaryCard';
 import EvidenceCard from './Card/EvidenceCard';
+import { useUser } from '../context/UserContext';
 
 type BookingTimelineProps = {
     booking: Booking;
@@ -49,6 +50,8 @@ export default function BookingTimeline({
         []
     );
 
+    const { user } = useUser();
+
     const getReadableType = (type?: BookingActivityType, message?: string) => {
         const map: Record<string, string> = {
             // initial booking state
@@ -82,6 +85,10 @@ export default function BookingTimeline({
             [BookingActivityType.COOLDOWN_REPORT_COMPLETED]: 'Cooldown report completed',
             [BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT]: 'Settler rejected cooldown report',
 
+            // payment release
+            [BookingActivityType.PAYMENT_RELEASED_TO_SETTLER]: 'Payment released to Settler',
+            [BookingActivityType.PAYMENT_RELEASED_TO_CUSTOMER]: 'Payment refunded to Customer',
+
             // final booking state
             [BookingActivityType.BOOKING_COMPLETED]: 'Booking completed',
 
@@ -89,9 +96,24 @@ export default function BookingTimeline({
         return map[type ?? ''] || message || 'Activity';
     };
 
+    // Filter timeline based on user role
+    const filteredTimeline = (booking?.timeline ?? []).filter(item => {
+        if (item.type === BookingActivityType.PAYMENT_RELEASED_TO_SETTLER) {
+            return user?.accountType === 'settler';  // Only settlers see this
+        }
+        if (item.type === BookingActivityType.PAYMENT_RELEASED_TO_CUSTOMER) {
+            return user?.accountType === 'customer'; // Only customers see this
+        }
+        return true; // Keep all other activities
+    });
+
+    // Reverse for display
+    const data = filteredTimeline.slice().reverse();
+    
+
+
     const renderItem = ({ item, index }: any) => {
         const isExpanded = expandedIndex === index;
-        const addons = Array.isArray(item.addons) ? item.addons : [];
         return (
             <TouchableOpacity
                 activeOpacity={0.8}
@@ -112,7 +134,11 @@ export default function BookingTimeline({
                     />
                 </View>
                 <View style={styles.content}>
-                    <Text style={styles.text}>{getReadableType(item.type, item.message)}</Text>
+                    {((item.type === BookingActivityType.PAYMENT_RELEASED_TO_SETTLER && user?.accountType === 'settler') ||
+                        (item.type === BookingActivityType.PAYMENT_RELEASED_TO_CUSTOMER && user?.accountType === 'customer') ||
+                        (item.type !== BookingActivityType.PAYMENT_RELEASED_TO_SETTLER && item.type !== BookingActivityType.PAYMENT_RELEASED_TO_CUSTOMER)) && (
+                            <Text style={styles.text}>{getReadableType(item.type, item.message)}</Text>
+                        )}
                     <Text style={styles.timestamp}>
                         {formatAnyTimestamp(item.timestamp)}
                     </Text>
@@ -315,14 +341,37 @@ export default function BookingTimeline({
                                     <Text style={{}}>Booking has been completed.</Text>
                                 </View>
                             )}
+
+                            {item.type === BookingActivityType.PAYMENT_RELEASED_TO_SETTLER && (
+                                <View>
+                                    {user?.accountType === 'settler' && (
+                                        <EvidenceCard
+                                            title="Settisfy has released payment to Settler"
+                                            imageUrls={item.paymentReleaseToSettlerEvidenceUrls}
+                                            remark={`Released Amount: RM${Number(item.paymentReleasedAmountToSettler || 0).toFixed(2)}`}
+                                        />
+                                    )}
+                                </View>
+
+                            )}
+
+                            {item.type === BookingActivityType.PAYMENT_RELEASED_TO_CUSTOMER && (
+                                <View>
+                                    {user?.accountType === 'customer' && (
+                                        <EvidenceCard
+                                            title="Settisfy has refunded payment to Customer"
+                                            imageUrls={item.paymentReleaseToCustomerEvidenceUrls}
+                                            remark={`Refunded Amount: RM${Number(item.paymentReleasedAmountToCustomer || 0).toFixed(2)}`}
+                                        />
+                                    )}
+                                </View>
+                            )}
                         </View>
                     )}
                 </View>
             </TouchableOpacity>
         );
     };
-
-    const data = booking?.timeline?.slice().reverse() || [];
 
     return (
         <FlatList

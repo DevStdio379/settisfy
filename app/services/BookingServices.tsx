@@ -38,7 +38,11 @@ export enum BookingActivityType {
   BOOKING_CANCELLED = 'BOOKING_CANCELLED',
   BOOKING_CANCELLED_BY_CUSTOMER = 'BOOKING_CANCELLED_BY_CUSTOMER',
   BOOKING_CANCELLED_BY_SETTLER = 'BOOKING_CANCELLED_BY_SETTLER',
-  PAYMENT_RELEASED = 'PAYMENT_RELEASED',
+
+  // payment release
+  PAYMENT_RELEASED_TO_SETTLER = 'PAYMENT_RELEASED_TO_SETTLER',
+  PAYMENT_RELEASED_TO_CUSTOMER = 'PAYMENT_RELEASED_TO_CUSTOMER',
+  
   REPORT_SUBMITTED = 'REPORT_SUBMITTED',
   STATUS_CHANGED = 'STATUS_CHANGED',
   SETTLER_QUOTE_UPDATED = 'SETTLER_QUOTE_UPDATED',
@@ -117,8 +121,17 @@ export interface Booking {
   cancelReasonText?: string;
   cancelReasonImageUrls?: string[];
   cancelActor?: BookingActorType;
+  
+  // system parameters
   platformFeeIsActive?: boolean;
   platformFee?: number;
+
+  // payment release
+  paymentReleasedAmountToSettler?: number;
+  paymentReleaseToSettlerEvidenceUrls?: string[];
+  paymentReleasedAmountToCustomer?: number;
+  paymentReleaseToCustomerEvidenceUrls?: string[];
+  
   timeline: any[];
   createAt: any;
   updatedAt: any;
@@ -260,8 +273,17 @@ const mapBorrowingData = (doc: any): Booking => {
     cancelReasonText: data.cancelReasonText,
     cancelReasonImageUrls: data.cancelReasonImageUrls,
     cancelActor: data.cancelActor,
+
+    // system parameters
     platformFee: data.platformFee,
     platformFeeIsActive: data.platformFeeIsActive,
+
+    // payment release
+    paymentReleasedAmountToSettler: data.paymentReleasedAmountToSettler,
+    paymentReleaseToSettlerEvidenceUrls: data.paymentReleaseToSettlerEvidenceUrls,
+    paymentReleasedAmountToCustomer: data.paymentReleasedAmountToCustomer,
+    paymentReleaseToCustomerEvidenceUrls: data.paymentReleaseToCustomerEvidenceUrls,
+
     createAt: data.createAt,
     updatedAt: data.updatedAt,
   };
