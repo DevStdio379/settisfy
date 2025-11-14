@@ -53,15 +53,15 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app uses your location to set an accurate service address and help service providers navigate to you.</string>
+	<string>This app uses your location to match you with nearby home service providers and to set an accurate service address. For example, we use your location to help cleaners navigate to your home for booked services.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app uses your location to set an accurate service address and help service providers navigate to you.</string>
+	<string>This app uses your location to provide accurate service addresses and help service providers navigate to your home, even when the app is not open. For example, background location allows cleaners to receive your exact service location before they arrive for a booking.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>This app requires camera access so users can take photos as part of their ongoing booked services and service documentation.</string>
+	<string>This app requires camera access so you can take photos for your notes to service providers or to document completed services.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app requires photo library access so users can upload photos as an alternative way to provide their service work and evidence.</string>
+	<string>This app requires photo library access so you can upload photos for your notes to service providers or to provide evidence of completed services.</string>
 	<key>NSUserNotificationUsageDescription</key>
-	<string>Notifications are used to send service updates and important alerts.</string>
+	<string>Notifications are used to send you real-time service updates and important alerts.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>UIAppFonts</key>
