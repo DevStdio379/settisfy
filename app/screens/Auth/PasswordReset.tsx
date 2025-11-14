@@ -14,8 +14,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import Input from '../../components/Input/Input';
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from '../../services/firebaseConfig';
+import auth from '@react-native-firebase/auth';
 
 type PasswordResetProps = StackScreenProps<RootStackParamList, 'PasswordReset'>;
 
@@ -37,11 +36,14 @@ const PasswordReset = ({ navigation }: PasswordResetProps) => {
         setLoading(true);
 
         try {
-            await sendPasswordResetEmail(auth, email.trim());
+            // 🔥 React Native Firebase
+            await auth().sendPasswordResetEmail(email.trim());
+
             Alert.alert(
                 "Success!",
                 "A password reset email has been sent. Please check your inbox."
             );
+
             navigation.goBack();
         } catch (error: any) {
             switch (error.code) {
