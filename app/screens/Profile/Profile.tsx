@@ -153,7 +153,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 14, color: COLORS.title }}>{user.currentAddress?.addressName}</Text>
-                                                            <Text style={{ fontSize: 20, fontWeight: 'bold', color: COLORS.title }}>{user.firstName} {user.lastName}</Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: COLORS.title }}>{user.firstName} {user.lastName}</Text>
                     </View>
                 </View>
                 {!user?.isVerified && (
@@ -227,7 +227,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                             <Ionicons name='chevron-forward-outline' size={30} color={COLORS.blackLight} />
                         </View>
                     </TouchableOpacity>
-                    {true && (
+                    {false && (
                         <View>
                             <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
                             <TouchableOpacity
@@ -245,10 +245,26 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                             </TouchableOpacity>
                         </View>
                     )}
+                    <View>
+                        <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate('Settings')}>
+                            <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 0, alignItems: 'center' }]} >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
+                                    <View style={[styles.cardimg]} >
+                                        <Ionicons name='settings' size={30} color={colors.title} />
+                                    </View>
+                                    <Text style={{ fontSize: 16, color: colors.title, fontWeight: 'bold' }}>Settings</Text>
+                                </View>
+                                <Ionicons name='chevron-forward-outline' size={30} color={COLORS.blackLight} />
+                            </View>
+                        </TouchableOpacity>
+                    </View>
                     <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        onPress={() => {}}>
+                        onPress={() => { }}>
                         <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
                                 <View style={[styles.cardimg]} >
@@ -261,7 +277,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        onPress={() => {}}>
+                        onPress={() => { }}>
                         <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
                                 <View style={[styles.cardimg]} >
@@ -287,7 +303,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                         </View>
                     </TouchableOpacity>
                     <View style={{ gap: 10, paddingTop: 30 }}>
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                             activeOpacity={0.8}
                             style={{
                                 padding: 20,
@@ -303,7 +319,7 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                             <Text style={{ fontSize: 18, color: COLORS.card, lineHeight: 21 }}>
                                 {user?.accountType === 'customer' ? 'Switch to Service Provider Profile' : 'Switch to Customer Profile'}
                             </Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                         {/* {
                             user?.isActive === true && (
                                 <TouchableOpacity

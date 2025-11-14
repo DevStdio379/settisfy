@@ -1,9 +1,15 @@
-import React, { use, useEffect } from 'react';
-import messaging from '@react-native-firebase/messaging';
-import { Alert, Platform } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import React, { useEffect } from 'react';
+import { Platform, Alert } from 'react-native';
 
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import messaging from '@react-native-firebase/messaging';
+import {
+  check,
+  request,
+  requestMultiple,
+  PERMISSIONS,
+  RESULTS
+} from 'react-native-permissions';
+
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider } from 'react-redux';
@@ -13,36 +19,64 @@ import { UserProvider } from './app/context/UserContext';
 
 export default function App() {
 
+  // -----------------------------
+  //  REQUEST LOCATION PERMISSIONS
+  // -----------------------------
   const requestLocationPermission = async () => {
-    const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+    if (Platform.OS === 'ios') {
+      const result = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
+      console.log("iOS location permission:", result);
+      return;
+    }
 
-    const result = await check(permission);
-    if (result === RESULTS.DENIED) {
-      const requestResult = await request(permission);
-      if (requestResult === RESULTS.GRANTED) {
-      } else {
-        // Alert.alert("Permission Denied", "Location permission is required to use this feature");
-      }
-    } else if (result === RESULTS.GRANTED) {
-      // Alert.alert("Permission Granted", "Location permission is already granted");
+    const fine = await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+    const coarse = await request(PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION);
+
+    console.log("Fine:", fine, "Coarse:", coarse);
+
+    // ❌ DO NOT request background automatically
+    // Android will force open the settings page every time.
+  };
+
+  // -----------------------------
+  //  REQUEST CAMERA & MEDIA PERMISSIONS
+  // -----------------------------
+  const requestCameraAndMedia = async () => {
+    if (Platform.OS === "android") {
+      await requestMultiple([
+        PERMISSIONS.ANDROID.CAMERA,
+        PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
+      ]);
+    } else {
+      await request(PERMISSIONS.IOS.CAMERA);
+      await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
     }
   };
 
-  async function requestUserPermission() {
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    if (enabled) {
-      console.log('Authorization status:', authStatus);
-    }
+  // -----------------------------
+  //  REQUEST NOTIFICATION PERMISSION
+  // -----------------------------
+  async function requestNotificationPermission() {
+    const status = await messaging().requestPermission();
+
+    const enabled =
+      status === messaging.AuthorizationStatus.AUTHORIZED ||
+      status === messaging.AuthorizationStatus.PROVISIONAL;
+
+    console.log("Notification permission:", enabled ? "enabled" : "disabled");
   }
 
+
+  // -----------------------------
+  //  ON APP START
+  // -----------------------------
   useEffect(() => {
     requestLocationPermission();
-    requestUserPermission();
+    requestCameraAndMedia();
+    requestNotificationPermission();
   }, []);
+
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -50,10 +84,10 @@ export default function App() {
         <SafeAreaView style={{ flex: 1 }}>
           <Provider store={store}>
             <UserProvider>
-              <Route/>
+              <Route />
             </UserProvider>
           </Provider>
-          </SafeAreaView>
+        </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
