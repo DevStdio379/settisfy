@@ -83,80 +83,81 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
 
     return (
         <ScrollView style={{ backgroundColor: COLORS.background }} showsVerticalScrollIndicator={false}>
-            <View style={[GlobalStyleSheet.container, { flexGrow: 1, paddingBottom: 0, paddingHorizontal: 30, paddingTop: 0 }]}>
-                <View style={{ paddingTop: 50, marginBottom: 30 }}>
-                    <View style={{ marginBottom: 10 }}>
-                        <Text style={{ fontSize: 26, color: COLORS.title, marginBottom: 5, fontWeight: 'bold' }}>Hello! Register to get {'\n'}started</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
-                        <View style={{ flex: 1, marginRight: 10 }}>
-                            <Text style={{ fontSize: 14, color: '#8A8A8A' }}>First Name</Text>
+            <View style = {{ paddingBottom: 300 }}>
+                <View style={[GlobalStyleSheet.container, { flexGrow: 1, paddingBottom: 0, paddingHorizontal: 30, paddingTop: 0 }]}>
+                    <View style={{ paddingTop: 50, marginBottom: 30 }}>
+                        <View style={{ marginBottom: 10 }}>
+                            <Text style={{ fontSize: 26, color: COLORS.title, marginBottom: 5, fontWeight: 'bold' }}>Hello! Register to get {'\n'}started</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
+                            <View style={{ flex: 1, marginRight: 10 }}>
+                                <Text style={{ fontSize: 14, color: '#8A8A8A' }}>First Name</Text>
+                                <Input
+                                    onFocus={() => setisFocused4(true)}
+                                    onBlur={() => setisFocused4(false)}
+                                    onChangeText={setFirstName}
+                                    isFocused={isFocused4}
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 10 }}>
+                                <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Last Name</Text>
+                                <Input
+                                    onFocus={() => setisFocused5(true)}
+                                    onBlur={() => setisFocused5(false)}
+                                    onChangeText={setLastName}
+                                    isFocused={isFocused5}
+                                />
+                            </View>
+                        </View>
+                        <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
+                            <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Username</Text>
+                        </View>
+                        <View style={{ marginBottom: 20, marginTop: 0 }}>
                             <Input
-                                onFocus={() => setisFocused4(true)}
-                                onBlur={() => setisFocused4(false)}
-                                onChangeText={setFirstName}
-                                isFocused={isFocused4}
+                                onFocus={() => setisFocused(true)}
+                                onBlur={() => setisFocused(false)}
+                                onChangeText={setUserName}
+                                isFocused={isFocused}
                             />
                         </View>
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                            <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Last Name</Text>
+                        <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
+                            <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Email</Text>
+                        </View>
+                        <View style={{ marginBottom: 20, marginTop: 0 }}>
                             <Input
-                                onFocus={() => setisFocused5(true)}
-                                onBlur={() => setisFocused5(false)}
-                                onChangeText={setLastName}
-                                isFocused={isFocused5}
+                                onFocus={() => setisFocused2(true)}
+                                onBlur={() => setisFocused2(false)}
+                                backround={colors.card}
+                                onChangeText={setEmail}
+                                isFocused={isFocused2}
+                            />
+                        </View>
+                        <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
+                            <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Password</Text>
+                        </View>
+                        <View style={{ marginBottom: 10, marginTop: 0 }}>
+                            <Input
+                                onFocus={() => setisFocused3(true)}
+                                onBlur={() => setisFocused3(false)}
+                                backround={colors.card}
+                                onChangeText={setPassword}
+                                isFocused={isFocused3}
+                                type={'password'}
                             />
                         </View>
                     </View>
-                    <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
-                        <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Username</Text>
+                    <View>
+                        <TouchableOpacity
+                            onPress={() => handleSignUp()}
+                            style={{ backgroundColor: COLORS.primary, borderRadius: 20, padding: 15, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Register</Text>
+                        </TouchableOpacity>
+                        <View style={{ marginTop: 10 }}>
+                            <Text style={{ fontSize: 14, color: theme.dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', textAlign: 'center' }}>By tapping “Sign Up” you accept our <Text style={{ marginBottom: 5, fontSize: 14, color: COLORS.primary }}>terms</Text> and <Text style={{ marginBottom: 5, fontSize: 14, color: COLORS.primary }}>condition</Text></Text>
+                        </View>
                     </View>
-                    <View style={{ marginBottom: 20, marginTop: 0 }}>
-                        <Input
-                            onFocus={() => setisFocused(true)}
-                            onBlur={() => setisFocused(false)}
-                            onChangeText={setUserName}
-                            isFocused={isFocused}
-                        />
-                    </View>
-                    <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
-                        <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Email</Text>
-                    </View>
-                    <View style={{ marginBottom: 20, marginTop: 0 }}>
-                        <Input
-                            onFocus={() => setisFocused2(true)}
-                            onBlur={() => setisFocused2(false)}
-                            backround={colors.card}
-                            onChangeText={setEmail}
-                            isFocused={isFocused2}
-                        />
-                    </View>
-                    <View style={[GlobalStyleSheet.container, { padding: 0 }]}>
-                        <Text style={{ fontSize: 14, color: '#8A8A8A' }}>Password</Text>
-                    </View>
-                    <View style={{ marginBottom: 10, marginTop: 0 }}>
-                        <Input
-                            onFocus={() => setisFocused3(true)}
-                            onBlur={() => setisFocused3(false)}
-                            backround={colors.card}
-                            onChangeText={setPassword}
-                            isFocused={isFocused3}
-                            type={'password'}
-                        />
-                    </View>
-                </View>
-                <View>
-                    <TouchableOpacity
-                        onPress={() => handleSignUp()}
-                        style={{ backgroundColor: COLORS.primary, borderRadius: 20, padding: 15, alignItems: 'center' }}
-                    >
-                        <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Register</Text>
-                    </TouchableOpacity>
-                    <View style={{ marginTop: 10 }}>
-                        <Text style={{ fontSize: 14, color: theme.dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', textAlign: 'center' }}>By tapping “Sign Up” you accept our <Text style={{ marginBottom: 5, fontSize: 14, color: COLORS.primary }}>terms</Text> and <Text style={{ marginBottom: 5, fontSize: 14, color: COLORS.primary }}>condition</Text></Text>
-                    </View>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+                    {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
                     <View style={{ flex: 1, height: 2, backgroundColor: '#ddd' }} />
                     <Text style={{ marginHorizontal: 10, fontSize: 16, color: '#666' }}>Or Register with</Text>
                     <View style={{ flex: 1, height: 2, backgroundColor: '#ddd' }} />
@@ -170,7 +171,6 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
                                     // setPassword('12345678');
                                 }}>
                                 <Ionicons name='logo-facebook' size={24} color={COLORS.title} />
-                                {/* <Text>Kuhai</Text> */}
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={{ borderRadius: 10, padding: 10, borderColor: COLORS.blackLight, borderWidth: 2, alignItems: 'center', width: SIZES.width * 0.2, height: SIZES.height * 0.07, justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, marginHorizontal: 10, backgroundColor: '#F6F6F6' }}
@@ -178,7 +178,6 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
                                     // setEmail('dinie@gmail.com');
                                     // setPassword('12345678');
                                 }}>
-                                {/* <Text>Dinie</Text> */}
                                 <Ionicons name='logo-google' size={24} color={COLORS.title} />
                             </TouchableOpacity>
                             <TouchableOpacity style={{ borderRadius: 10, padding: 10, borderColor: COLORS.blackLight, borderWidth: 2, alignItems: 'center', width: SIZES.width * 0.2, height: SIZES.height * 0.07, justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, marginHorizontal: 10, backgroundColor: '#F6F6F6' }}
@@ -186,24 +185,24 @@ const SignUp = ({ navigation }: SignUpScreenProps) => {
                                     // setEmail('razzin@gmail.com');
                                     // setPassword('12345678');
                                 }}>
-                                {/* <Text>Razzin</Text> */}
                                 <Ionicons name='logo-apple' size={24} color={COLORS.title} />
                             </TouchableOpacity>
                         </View>
                     </View>
+                </View> */}
                 </View>
-            </View>
-            <View style={{ marginBottom: 15, marginTop: 20, flexDirection: 'row', justifyContent: 'center' }}>
-                <Text style={{ color: colors.title, fontSize: 16, textAlign: 'center' }}>Already have an account?</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.5}>
-                    <Text style={{ fontSize: 16, color: COLORS.primary, fontWeight: 'bold' }}> Login Now</Text>
-                </TouchableOpacity>
-            </View>
-            {loading && (
-                <View style={[GlobalStyleSheet.loadingOverlay, { height: SIZES.height }]}>
-                    <ActivityIndicator size="large" color={COLORS.primary} />
+                <View style={{ marginBottom: 15, marginTop: 20, flexDirection: 'row', justifyContent: 'center' }}>
+                    <Text style={{ color: colors.title, fontSize: 16, textAlign: 'center' }}>Already have an account?</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('SignIn')} activeOpacity={0.5}>
+                        <Text style={{ fontSize: 16, color: COLORS.primary, fontWeight: 'bold' }}> Login Now</Text>
+                    </TouchableOpacity>
                 </View>
-            )}
+                {loading && (
+                    <View style={[GlobalStyleSheet.loadingOverlay, { height: SIZES.height }]}>
+                        <ActivityIndicator size="large" color={COLORS.primary} />
+                    </View>
+                )}
+            </View>
         </ScrollView>
     )
 }
