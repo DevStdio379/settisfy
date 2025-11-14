@@ -148,7 +148,7 @@ const BookingCancelForm = ({ navigation, route }: BookingCancelFormScreenProps) 
                                 }))
 
                                 await updateBooking(booking.id!, {
-                                    status: user?user.accountType! === 'customer' ? 11.1 : 11.2 : 11,
+                                    status: user?user.accountType! === 'customer' ? 12.1 : 12.2 : 12,
                                     cancelReasons: cancelReasons,
                                     cancelReasonText: data.remark,
                                     cancelReasonImageUrls: data.images,
