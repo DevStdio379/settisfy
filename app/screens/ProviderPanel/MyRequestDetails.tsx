@@ -4,7 +4,6 @@ import { COLORS, SIZES } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import MapView, { Marker } from 'react-native-maps';
-import Header from '../../layout/Header';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
 import Ionicons from '@react-native-vector-icons/ionicons';
