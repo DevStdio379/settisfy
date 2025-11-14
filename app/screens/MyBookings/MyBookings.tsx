@@ -121,9 +121,6 @@ const MyBookings = ({ navigation }: MyBookingsScreenProps) => {
                         showsVerticalScrollIndicator={false}
                         style={{ width: SIZES.width, paddingTop: 10 }}
                         key={index}
-                        refreshControl={
-                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                        }
                     >
                         <View style={{}}>
                             {index === 0 && (
