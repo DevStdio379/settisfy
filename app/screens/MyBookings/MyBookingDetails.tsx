@@ -1590,8 +1590,8 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                 </ScrollView>
                                 <View style={[GlobalStyleSheet.line, { marginTop: 15 }]} />
                                 <View style={{ width: '100%', }}>
-                                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20 }}>Quick Actions</Text>
-                                    <FlatList
+                                    {/* <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20 }}>Quick Actions</Text> */}
+                                    {/* <FlatList
                                         scrollEnabled={false}
                                         data={actions}
                                         keyExtractor={(item, index) => index.toString()}
@@ -1615,7 +1615,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 <Text style={{ color: COLORS.black, fontWeight: 'bold', opacity: 0.5 }}>{item.buttonTitle}</Text>
                                             </TouchableOpacity>
                                         )}
-                                    />
+                                    /> */}
                                     {(Number(booking.status) <= 11 && Number(booking.status) !== 6) && (
                                         <View style={{ marginTop: 40 }} >
                                             <TouchableOpacity

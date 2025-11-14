@@ -1410,7 +1410,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                 </ScrollView>
                                 <View style={[GlobalStyleSheet.line, { marginTop: 20 }]} />
                                 <View style={{ width: '100%', }}>
-                                    <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20 }}>Quick Actions</Text>
+                                    {/* <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 20 }}>Quick Actions</Text>
                                     <FlatList
                                         scrollEnabled={false}
                                         data={actions}
@@ -1435,7 +1435,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                 <Text style={{ color: COLORS.black, fontWeight: 'bold', opacity: 0.5 }}>{item.buttonTitle}</Text>
                                             </TouchableOpacity>
                                         )}
-                                    />
+                                    /> */}
                                     {(Number(booking.status) <= 11 && booking.status !== 6) && user?.uid === booking.settlerId && (
                                         <View style={{ marginTop: 40 }} >
                                             <TouchableOpacity
