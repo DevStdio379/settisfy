@@ -140,7 +140,7 @@ const BookingCancelForm = ({ navigation, route }: BookingCancelFormScreenProps) 
                             isEditable={loading ? false : (Number(booking.status) >= 11 ? false : true)}
                             showRemark={true}
                             buttonText={loading ? 'Cancelling...' : 'Submit Cancellation'}
-                            showSubmitButton={Number(booking.status) >= 11 ? false : true}
+                            showSubmitButton={Number(booking.status) >= 12 ? false : true}
                             onSubmit={async (data) => {
                                 setLoading(true);
                                 await uploadBookingCancellationReason(booking.id!, data.images).then((urls => {
