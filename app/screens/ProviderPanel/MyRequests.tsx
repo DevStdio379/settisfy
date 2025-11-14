@@ -167,6 +167,7 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
                                   <Text style={{ fontSize: 12, color: COLORS.black, opacity: .5 }}>{data.id}</Text>
                                   <Text numberOfLines={1} style={{ fontSize: 16, color: COLORS.black, fontWeight: 'bold' }}>{data.catalogueService.title}</Text>
                                   <Text style={{ fontSize: 14, color: COLORS.black, opacity: .5 }}>for {data.firstName} {data.lastName}</Text>
+                                  <Text style={{ fontSize: 14 }}>{new Date(data.selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}, {new Date(data.selectedDate).toLocaleDateString('en-GB', { weekday: 'long' })}</Text>
                                 </View>
                               </View>
                             </TouchableOpacity>
@@ -210,6 +211,7 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
                                   </View>
                                 )}
                                 <View style={{ width: '70%', padding: 10 }}>
+                                  <Text style={{ fontSize: 12, color: COLORS.black, opacity: .5 }}>{data.id}</Text>
                                   <Text numberOfLines={1} style={{ fontSize: 16, color: COLORS.black, fontWeight: 'bold' }}>{data.catalogueService.title}</Text>
                                   <Text style={{ fontSize: 14, color: COLORS.black, opacity: .5 }}>requested by {data.firstName} {data.lastName}</Text>
                                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -243,7 +245,22 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
                                 borderWidth: 1,
                                 borderColor: COLORS.blackLight,
                                 backgroundColor: COLORS.card,
+                                position: 'relative',
                               }}>
+                              {data.paymentReleasedAmountToSettler && (
+                                <View style={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: COLORS.success,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  borderRadius: 6,
+                                  zIndex: 1,
+                                }}>
+                                  <Text style={{ color: COLORS.card, fontSize: 10, fontWeight: 'bold' }}>PAID</Text>
+                                </View>
+                              )}
                               <View style={[GlobalStyleSheet.flexcenter, { justifyContent: 'flex-start' }]}>
                                 {data.catalogueService.imageUrls && data.catalogueService.imageUrls.length > 0 ? (
                                   <View style={{ width: '30%' }}>
@@ -258,11 +275,10 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
                                   </View>
                                 )}
                                 <View style={{ width: '70%', padding: 10 }}>
+                                  <Text style={{ fontSize: 12, color: COLORS.black, opacity: .5 }}>{data.id}</Text>
                                   <Text numberOfLines={1} style={{ fontSize: 16, color: COLORS.black, fontWeight: 'bold' }}>{data.catalogueService.title}</Text>
                                   <Text style={{ fontSize: 14, color: COLORS.black, opacity: .5 }}>requested by {data.firstName} {data.lastName}</Text>
-                                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Text style={{ fontSize: 14 }}>{new Date(data.selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}, {new Date(data.selectedDate).toLocaleDateString('en-GB', { weekday: 'long' })}</Text>
-                                  </View>
+                                  <Text style={{ fontSize: 14 }}>{new Date(data.selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}, {new Date(data.selectedDate).toLocaleDateString('en-GB', { weekday: 'long' })}</Text>
                                 </View>
                               </View>
                             </TouchableOpacity>

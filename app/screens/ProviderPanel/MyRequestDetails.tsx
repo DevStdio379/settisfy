@@ -36,7 +36,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
     const scrollViewTabHeader = useRef<any>(null);
     const scrollViewTabContent = useRef<any>(null);
-    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report'];
+    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report', 'Payment Release'];
     const scrollX = useRef(new Animated.Value(0)).current;
     const onClickHeader = (i: any) => scrollViewTabHeader.current.scrollTo({ x: i * SIZES.width });
     const onClick = (i: any) => scrollViewTabContent.current.scrollTo({ x: i * SIZES.width });
@@ -311,7 +311,8 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     // 8: incomplete flag by customer (8.2: resolve)
     // 9: cooldown report by customer
     // 10: review completed
-    // 11: booking cancelled (11.1: by customer, 11.2: by settler)
+    // 11: payment released
+    // 12: booking cancelled (12.1: by customer, 12.2: by settler)
 
 
     const steps = [
@@ -771,7 +772,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Message Customer</Text>
                                             </TouchableOpacity>
                                         </View>
-                                    ) : status === 6 ? (
+                                    ) : status === 6 || (status === 11 && !booking.paymentReleaseToSettlerEvidenceUrls && !booking.paymentReleasedAmountToSettler) ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontWeight: 'bold' }}>Your job is now completed.</Text>
                                         </View>
@@ -1034,9 +1035,36 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>View Problem Report</Text>
                                             </TouchableOpacity>
                                         </View>
-                                    ) : status === 11 || status === 11.1 || status === 11.2 ? (
+                                    ) : status === 10  ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>Booking Has been Cancelled {booking.status === 11.1 ? 'by Customer' : booking.status === 11.2 ? 'by Settler' : ''}</Text>
+                                            <Text style={{ fontWeight: 'bold', paddingBottom: 5 }}>This booking is now completed</Text>
+                                            <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Your will be notified when the payment is released.</Text>
+                                        </View>
+                                    ) : status === 11 && booking.paymentReleaseToSettlerEvidenceUrls && booking.paymentReleasedAmountToSettler ? (
+                                        <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
+                                            <Text style={{ fontWeight: 'bold', paddingBottom: 5 }}>Your payment is released</Text>
+                                            <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>View your payment release details below</Text>
+                                            <TouchableOpacity
+                                                style={{
+                                                    backgroundColor: COLORS.primary,
+                                                    padding: 10,
+                                                    borderRadius: 10,
+                                                    marginVertical: 10,
+                                                    width: '80%',
+                                                    alignItems: 'center',
+                                                }}
+                                                onPress={async () => {
+                                                    onClick(5);
+                                                    onClickHeader(5);
+                                                    setActiveIndex(5);
+                                                }}
+                                            >
+                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>View Payment Release</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : status === 12 || status === 12.1 || status === 12.2 ? (
+                                        <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
+                                            <Text style={{ fontWeight: 'bold' }}>Booking Has been Cancelled {booking.status === 12.1 ? 'by Customer' : booking.status === 12.2 ? 'by Settler' : ''}</Text>
                                             <TouchableOpacity
                                                 style={{
                                                     backgroundColor: COLORS.primary,
@@ -1356,6 +1384,23 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                     ) : (
                                                         <View style={{ padding: 20, alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 10, marginTop: 20 }}>
                                                             <Text style={{ color: COLORS.blackLight2 }}>No reports by customer</Text>
+                                                        </View>
+                                                    )
+                                                )}
+                                                {index === 5 && (
+                                                    (booking.paymentReleaseToSettlerEvidenceUrls && booking.paymentReleaseToSettlerEvidenceUrls.length > 0 && booking.paymentReleasedAmountToSettler) ? (
+                                                        <View>
+                                                            <AttachmentForm
+                                                                title="Payment Release to Settler Details"
+                                                                description="Please check with your issuing bank for the payment details."
+                                                                remarkPlaceholder=''
+                                                                initialImages={booking.paymentReleaseToSettlerEvidenceUrls || []}
+                                                                initialRemark={`Amount: RM${Number(booking.paymentReleasedAmountToSettler).toFixed(2)}` || ''}
+                                                            />
+                                                        </View>
+                                                    ) : (
+                                                        <View style={{ padding: 20, alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 10, marginTop: 20 }}>
+                                                            <Text style={{ color: COLORS.blackLight2 }}>No payment release yet</Text>
                                                         </View>
                                                     )
                                                 )}

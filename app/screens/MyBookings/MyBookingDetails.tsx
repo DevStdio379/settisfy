@@ -46,7 +46,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
     const scrollViewHome = useRef<any>(null);
     const [isFocused, setisFocused] = useState(false);
-    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report'];
+    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report', 'Refund Issued'];
     const scrollX = useRef(new Animated.Value(0)).current;
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -95,7 +95,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
             if (booking) {
                 // ✅ Fetch the latest booking data first
                 const selectedBooking = await fetchSelectedBooking(booking.id || 'undefined');
-                
+
                 if (selectedBooking) {
                     // ✅ Update the local booking state
                     setBooking(selectedBooking);
@@ -581,7 +581,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                     )}
                                                                     <View style={[GlobalStyleSheet.line, { marginTop: 10 }]} />
                                                                     <View style={{ width: "100%", alignItems: "center", justifyContent: "center", paddingTop: 10 }}>
-                                                                        <Text style={{ fontWeight: 'bold'}}>Select this settler?</Text>
+                                                                        <Text style={{ fontWeight: 'bold' }}>Select this settler?</Text>
                                                                         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
                                                                             <TouchableOpacity
                                                                                 disabled={loading}
@@ -855,7 +855,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
-                                    ) : status === 6 || status === 10 ? (
+                                    ) : status === 6 || status === 10  || (status === 11 && !booking.paymentReleaseToCustomerEvidenceUrls && !booking.paymentReleasedAmountToCustomer) ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontWeight: 'bold' }}>{review ? 'Thank you for using our service' : 'Your feedback matters for us'}</Text>
                                             <Text style={{ fontSize: 12, color: COLORS.blackLight2, textAlign: 'center' }}>Leave a review and good rating to the service</Text>
@@ -1196,9 +1196,31 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 </View>
                                             </TouchableOpacity>
                                         </View>
-                                    ) : status === 11 || status === 11.1 || status === 11.2 ? (
+                                    ) : status === 11 && booking.paymentReleaseToCustomerEvidenceUrls && booking.paymentReleasedAmountToCustomer ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>Booking Has been Cancelled {booking.status === 11.1 ? 'by Customer' : booking.status === 11.2 ? 'by Settler' : ''}</Text>
+                                            <Text style={{ fontWeight: 'bold', paddingBottom: 5 }}>Your refund is issued</Text>
+                                            <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>View your refund details below</Text>
+                                            <TouchableOpacity
+                                                style={{
+                                                    backgroundColor: COLORS.primary,
+                                                    padding: 10,
+                                                    borderRadius: 10,
+                                                    marginVertical: 10,
+                                                    width: '80%',
+                                                    alignItems: 'center',
+                                                }}
+                                                onPress={async () => {
+                                                    onClick(5);
+                                                    onClickHeader(5);
+                                                    setActiveIndex(5);
+                                                }}
+                                            >
+                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>View Refund Details</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    ) : status === 12 || status === 12.1 || status === 12.2 ? (
+                                        <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
+                                            <Text style={{ fontWeight: 'bold' }}>Booking Has been Cancelled {booking.status === 12.1 ? 'by Customer' : booking.status === 12.2 ? 'by Settler' : ''}</Text>
                                             <TouchableOpacity
                                                 style={{
                                                     backgroundColor: COLORS.primary,
@@ -1544,6 +1566,23 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                             </View>
                                                         )}
                                                     </View>
+                                                )}
+                                                {index === 5 && (
+                                                    (booking.paymentReleaseToCustomerEvidenceUrls && booking.paymentReleaseToCustomerEvidenceUrls.length > 0 && booking.paymentReleasedAmountToCustomer) ? (
+                                                        <View>
+                                                            <AttachmentForm
+                                                                title="Payment Refund to Customer Details"
+                                                                description="Please check with your issuing bank for the payment details."
+                                                                remarkPlaceholder='Water dripping from the faucet after the settler fixed it.'
+                                                                initialImages={booking.paymentReleaseToCustomerEvidenceUrls || []}
+                                                                initialRemark={`Amount: RM${Number(booking.paymentReleasedAmountToCustomer).toFixed(2)}` || ''}
+                                                            />
+                                                        </View>
+                                                    ) : (
+                                                        <View style={{ padding: 20, alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 10, marginTop: 20 }}>
+                                                            <Text style={{ color: COLORS.blackLight2 }}>No payment release yet</Text>
+                                                        </View>
+                                                    )
                                                 )}
                                             </View>
                                         </View>

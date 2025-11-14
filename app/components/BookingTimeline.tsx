@@ -125,10 +125,18 @@ export default function BookingTimeline({
                         style={[
                             styles.dot,
                             {
-                                backgroundColor:
-                                    item.actor === 'SETTLER'
-                                        ? COLORS.primary
-                                        : COLORS.secondary,
+                                backgroundColor: (() => {
+                                    switch (item.actor) {
+                                        case 'SETTLER':
+                                            return COLORS.primary;
+                                        case 'CUSTOMER':
+                                            return COLORS.secondary;
+                                        case 'SYSTEM':
+                                            return '#808080';
+                                        default:
+                                            return '#808080';
+                                    }
+                                })(),
                             },
                         ]}
                     />

@@ -195,6 +195,20 @@ const MyBookings = ({ navigation }: MyBookingsScreenProps) => {
                                                                 borderColor: COLORS.blackLight,
                                                                 backgroundColor: COLORS.card,
                                                             }}>
+                                                            {data.paymentReleasedAmountToCustomer && (
+                                                                <View style={{
+                                                                    position: 'absolute',
+                                                                    top: 8,
+                                                                    right: 8,
+                                                                    backgroundColor: COLORS.success,
+                                                                    paddingHorizontal: 8,
+                                                                    paddingVertical: 4,
+                                                                    borderRadius: 6,
+                                                                    zIndex: 1,
+                                                                }}>
+                                                                    <Text style={{ color: COLORS.card, fontSize: 10, fontWeight: 'bold' }}>REFUNDED</Text>
+                                                                </View>
+                                                            )}
                                                             <View style={[GlobalStyleSheet.flexcenter, { justifyContent: 'flex-start' }]}>
                                                                 {data.catalogueService.imageUrls && data.catalogueService.imageUrls.length > 0 ? (
                                                                     <View style={{ width: '30%' }}>
