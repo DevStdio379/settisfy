@@ -39,6 +39,7 @@ import BookingCancelForm from '../screens/MyBookings/BookingCancelForm';
 import CompanyInformation from '../screens/Profile/CompanyInformation';
 import AccountDeletion from '../screens/Profile/AccountDeletion';
 import Settings from '../screens/Profile/Settings';
+import PasswordReset from '../screens/Auth/PasswordReset';
 
 
 const StackComponent = createStackNavigator<RootStackParamList>();
@@ -58,6 +59,7 @@ const StackNavigator = () => {
 				<StackComponent.Screen name="SignUp" component={SignUp} />
 				<StackComponent.Screen name="SignIn" component={SignIn} />
 				<StackComponent.Screen name="AccountVerification" component={AccountVerification} />
+				<StackComponent.Screen name="PasswordReset" component={PasswordReset} />
 
 				{/* Borrower */}
 

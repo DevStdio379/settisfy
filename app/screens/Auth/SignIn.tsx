@@ -117,7 +117,7 @@ const SignIn = ({ navigation }: SignInScreenProps) => {
                             <Text style={{ fontSize: 14, color: colors.title }}>Forgot Password?</Text>
                             <TouchableOpacity
                                 activeOpacity={0.5}
-                                onPress={() => navigation.navigate('SignIn')}
+                                onPress={() => navigation.navigate('PasswordReset')}
                             >
                                 <Text style={{ fontSize: 14, color: COLORS.primary }}>Reset here</Text>
                             </TouchableOpacity>

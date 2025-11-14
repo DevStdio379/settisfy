@@ -12,6 +12,7 @@ export type RootStackParamList = {
     SignUp: undefined;
     SignIn: undefined;
     AccountVerification: undefined;
+    PasswordReset: undefined;
 
     Home: undefined;
     Products: undefined;
