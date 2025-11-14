@@ -25,6 +25,7 @@ import { BookingActivityType, BookingActorType, createBooking, uploadNoteToSettl
 import { generateId } from "../../helper/HelperFunctions";
 import AttachmentForm from "../../components/Forms/AttachmentForm";
 import firestore from '@react-native-firebase/firestore';
+import { fetchSystemParameters, SystemParameter } from "../../services/SystemParameterServices";
 
 type QuoteServiceScreenProps = StackScreenProps<RootStackParamList, "QuoteService">;
 
@@ -61,9 +62,6 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
     ];
 
   // States for selections
-  const [selectedArea, setSelectedArea] = useState<number | null>(null);
-  const [selectedTidiness, setSelectedTidiness] = useState<number | null>(null);
-  const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [loading, setLoading] = useState(false);
@@ -74,104 +72,15 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<Address | undefined>(user?.currentAddress);
   const [accordionOpen, setAccordionOpen] = useState<{ [key: string]: boolean }>({});
-  const [isFocused, setisFocused] = useState(false);
-  const [selectedNotesToSettlerImageUrl, setSelectedNotesToSettlerImageUrl] = useState<string | null>(null);
   const [notesToSettlerImageUrls, setNotesToSettlerImageUrls] = useState<string[]>([]);
-  const [selectedPaymentEvidenceImageUrl, setSelectedPaymentEvidenceImageUrl] = useState<string | null>(null);
   const [paymentEvidenceImageUrls, setPaymentEvidenceImageUrls] = useState<string[]>([]);
   const [notesToSettler, setNotesToSettler] = useState<string>('');
   const [grandTotal, setGrandTotal] = useState<number>(0);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: SubOption[] }>({});
   const basePrice = service ? service.basePrice : 0;
   const [totalQuote, setTotalQuote] = useState(basePrice);
-  const platformFee = 2; // Fixed platform fee
+  const [systemParameters, setSystemParameters] = useState<SystemParameter | null>(null);
   const [reviews, setReviews] = useState<ReviewWithUser[]>();
-
-  const handleImageSelect = () => {
-    if (notesToSettlerImageUrls.length >= 5) {
-      Alert.alert('Limit Reached', 'You can only select up to 5 images.');
-      return;
-    }
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Choose from Gallery', 'Use Camera'],
-          cancelButtonIndex: 0,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) selectImages();
-          else if (buttonIndex === 2) cameraImage();
-        }
-      );
-    } else {
-      Alert.alert('Add Photo', 'Choose an option', [
-        { text: 'Choose from Gallery', onPress: selectImages },
-        { text: 'Use Camera', onPress: cameraImage },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  };
-
-
-  // camera tools
-  const selectImages = async () => {
-    const options = {
-      mediaType: 'photo' as const,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-      selectionLimit: 5 - notesToSettlerImageUrls.length, // Limit the selection to the remaining slots
-    };
-
-    launchImageLibrary(options, async (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorMessage) {
-        console.log('Image picker error: ', response.errorMessage);
-      } else {
-        const selectedImages = response.assets?.map(asset => asset.uri).filter(uri => uri !== undefined) as string[] || [];
-        setNotesToSettlerImageUrls((prevImages) => {
-          const updatedImages = [...prevImages, ...selectedImages];
-          setSelectedNotesToSettlerImageUrl(updatedImages[0]);
-          return updatedImages;
-        });
-      }
-    });
-  };
-
-  // Function to handle image selection (Gallery & Camera)
-  const cameraImage = async () => {
-    const options = {
-      mediaType: 'photo' as const,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-    };
-
-    if (notesToSettlerImageUrls.length >= 5) {
-      Alert.alert('You can only select up to 5 images.');
-      return;
-    }
-
-    launchCamera(options, async (response: any) => {
-      if (response.didCancel) {
-        console.log('User cancelled camera');
-      } else if (response.errorCode) {
-        console.log('Camera Error: ', response.errorMessage);
-      } else {
-        let newImageUri = response.assets?.[0]?.uri;
-        if (newImageUri) {
-          setNotesToSettlerImageUrls((prevImages) => {
-            const updatedImages = [...prevImages, newImageUri];
-            setSelectedNotesToSettlerImageUrl(updatedImages[0]);
-            return updatedImages;
-          });
-        }
-      }
-    });
-  };
-
 
   // tabview
   const scrollViewHome = useRef<any>(null);
@@ -187,7 +96,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
         Alert.alert(`Select at least 1 ${service.category} option`)
         return
       }
-      let grandTotal = Number(totalQuote) + Number(platformFee); // Adding platform fee of $2
+      let grandTotal = Number(totalQuote) + Number(systemParameters?.platformFee || 0); // Adding platform fee of $2
       setGrandTotal(grandTotal);
       setIndex(1);
     }
@@ -250,6 +159,8 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
       return;
     }
 
+    const systemParameters = await fetchSystemParameters();
+
     // Convert selectedAddons object to DynamicOption[] array
     const addonsArray = Object.entries(selectedAddons).map(([category, options]) => {
       const dynOpt = service.dynamicOptions?.find((d: DynamicOption) => d.name === category);
@@ -302,6 +213,10 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
       //generate random collection and return codes
       serviceStartCode: '',
       serviceEndCode: '',
+
+      // system parameters
+      platformFeeIsActive: systemParameters.platformFeeIsActive,
+      platformFee: systemParameters.platformFee || 0,
       updatedAt: new Date(),
       createAt: new Date(),
     };
@@ -370,6 +285,12 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
   // load
   useEffect(() => {
     const fetchData = async () => {
+
+      // Fetch system parameters
+      const sysParams = await fetchSystemParameters();
+      if (sysParams) {
+        setSystemParameters(sysParams);
+      }
       await getAddresses();
       const reviewsData = await fetchReviewsByCatalogueId(service.id || '');
 
@@ -799,33 +720,28 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
               <View style={{ marginBottom: 20 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
                   <Text style={{ fontSize: 14, color: "#333" }}>Service Price</Text>
-                  <Text style={{ fontSize: 14, color: "#333" }}>1 x session</Text>
-                  <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM{service.basePrice}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM{Number(service.basePrice).toFixed(2)}</Text>
                 </View>
                 {
                   Object.entries(selectedAddons).map(([category, options]) => (
                     options.map((option, idx) => (
                       <View key={`${category}-${idx}`} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
                         <Text style={{ fontSize: 14, color: "#333" }}>{category}: {option.label}</Text>
-                        <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM{option.additionalPrice}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM{Number(option.additionalPrice).toFixed(2)}</Text>
                       </View>
                     ))
                   ))
                 }
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-                  <Text style={{ fontSize: 14, color: "#333" }}>Platform Fee</Text>
-                  <Text style={{ fontSize: 14, color: "#333" }}></Text>
-                  <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM2.00</Text>
-                </View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
-                  <Text style={{ fontSize: 14, color: "#333" }}>Delivery Charge</Text>
-                  <Text style={{ fontSize: 14, color: "#333" }}> N/A</Text>
-                  <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM0.00</Text>
-                </View>
+                {systemParameters?.platformFeeIsActive && (
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
+                    <Text style={{ fontSize: 14, color: "#333" }}>Platform Fee</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "bold" }}>RM{systemParameters.platformFee?.toFixed(2)}</Text>
+                  </View>
+                )}
                 <View style={[{ backgroundColor: COLORS.black, height: 1, margin: 10, width: '90%', alignSelf: 'center' },]} />
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
                   <Text style={{ fontSize: 14, fontWeight: "bold" }}>Total</Text>
-                  <Text style={{ fontSize: 14, color: "#333", fontWeight: "bold" }}>RM{grandTotal}</Text>
+                  <Text style={{ fontSize: 14, color: "#333", fontWeight: "bold" }}>RM{Number(grandTotal).toFixed(2)}</Text>
                 </View>
               </View>
               <View style={GlobalStyleSheet.line} />

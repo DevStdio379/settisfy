@@ -117,6 +117,8 @@ export interface Booking {
   cancelReasonText?: string;
   cancelReasonImageUrls?: string[];
   cancelActor?: BookingActorType;
+  platformFeeIsActive?: boolean;
+  platformFee?: number;
   timeline: any[];
   createAt: any;
   updatedAt: any;
@@ -258,6 +260,8 @@ const mapBorrowingData = (doc: any): Booking => {
     cancelReasonText: data.cancelReasonText,
     cancelReasonImageUrls: data.cancelReasonImageUrls,
     cancelActor: data.cancelActor,
+    platformFee: data.platformFee,
+    platformFeeIsActive: data.platformFeeIsActive,
     createAt: data.createAt,
     updatedAt: data.updatedAt,
   };

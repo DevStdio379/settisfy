@@ -35,7 +35,7 @@ const ProviderDashboard = ({ navigation }: ProviderDashboardScreenProps) => {
 
 
     const theme = useTheme();
-    const { user, updateUserData, setUser } = useUser();
+    const { user, updateUserData } = useUser();
     const [loading, setLoading] = useState(true);
     const { colors }: { colors: any } = theme;
     const [refreshing, setRefreshing] = useState(false);
@@ -120,15 +120,6 @@ const ProviderDashboard = ({ navigation }: ProviderDashboardScreenProps) => {
                         <Ionicons name="time-outline" size={30} color={COLORS.primary} style={{ marginBottom: 10 }} />
                         <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.title, textAlign: 'center' }}>
                             Pending Balance
-                        </Text>
-                        <Text style={{ fontSize: 14, color: COLORS.title, textAlign: 'center' }}>
-                            RMXXX.XX
-                        </Text>
-                    </View>
-                    <View style={[styles.arrivaldata, { flex: 1, margin: 5, padding: 20, alignItems: 'center' }]}>
-                        <Ionicons name="lock-closed-outline" size={30} color={COLORS.primary} style={{ marginBottom: 10 }} />
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.title, textAlign: 'center' }}>
-                            Deposit Held
                         </Text>
                         <Text style={{ fontSize: 14, color: COLORS.title, textAlign: 'center' }}>
                             RMXXX.XX
