@@ -1,6 +1,6 @@
 import { useTheme } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Linking } from 'react-native'
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { COLORS } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -8,6 +8,7 @@ import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useUser } from '../../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchSystemParameters, SystemParameter } from '../../services/SystemParameterServices';
 
 type ProfileScreenProps = StackScreenProps<RootStackParamList, 'Profile'>;
 
@@ -17,10 +18,18 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
     const { user, updateUserData, fetchCurrentUser } = useUser();
     const { colors }: { colors: any } = theme;
 
+    const [systemParameters, setSystemParameters] = useState<SystemParameter>();
+
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
+        
+        // Fetch system parameters
+        const data = await fetchSystemParameters();
+        if (data) {
+            setSystemParameters(data);
+        }
         if (user) {
             await fetchCurrentUser(user.uid);
         }
@@ -264,7 +273,11 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                     <View style={[GlobalStyleSheet.line, { margin: 10 },]} />
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        onPress={() => { }}>
+                        onPress={() => {
+                            if (systemParameters?.faqLink) {
+                                Linking.openURL(systemParameters.faqLink);
+                            }
+                        }}>
                         <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
                                 <View style={[styles.cardimg]} >
@@ -277,7 +290,11 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        onPress={() => { }}>
+                        onPress={() => {
+                            if (systemParameters?.faqLink) {
+                                Linking.openURL(systemParameters.faqLink);
+                            }
+                        }}>
                         <View style={[GlobalStyleSheet.flexcenter, { width: '100%', gap: 20, justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }]} >
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }} >
                                 <View style={[styles.cardimg]} >
