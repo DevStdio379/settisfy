@@ -18,6 +18,8 @@ import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image } 
 import { COLORS } from '../../constants/theme';
 import { Booking } from '../../services/BookingServices';
 import { Timestamp } from '@react-native-firebase/firestore';
+import Ionicons from '@react-native-vector-icons/ionicons';
+import StatusBadge from '../../components/StatusBadge';
 
 type ChatScreenProps = StackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -127,7 +129,7 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
         
         {otherUser?.profileImageUrl ? (
@@ -144,34 +146,37 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
           <Text style={styles.headerName}>{otherUser?.firstName} {otherUser?.lastName}</Text>
           {booking && (
             <Text style={styles.headerSubtitle}>
-              {booking.catalogueService.title || 'Booking'} • {booking.status || 'Active'}
+              {booking.catalogueService.title || 'Booking'}
             </Text>
           )}
         </View>
       </View>
 
       {/* Booking Info Card */}
-      {booking && (
-        <View style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bookingTitle}>Booking Details</Text>
-            <Text style={styles.bookingInfo}>
-              Date: {typeof booking.selectedDate === 'string' 
-          ? booking.selectedDate 
-          : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
-            </Text>
-            <Text style={styles.bookingInfo}>Status: {booking.status}</Text>
-          </View>
-          {booking.catalogueService?.imageUrls && (
-            <Image 
-              source={{ uri: booking.catalogueService.imageUrls[0] }} 
-              style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }} 
-            />
-          )}
-        </View>
-      )}
+        {booking && (
+          <TouchableOpacity 
+            style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}
+            onPress={() => navigation.navigate('MyBookingDetails', { booking: booking })}
+          >
+            <View style={{ flex: 1 }}>
+          <Text style={styles.bookingTitle}>Booking Details</Text>
+          <Text style={styles.bookingInfo}>
+            Date: {typeof booking.selectedDate === 'string' 
+            ? booking.selectedDate 
+            : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
+          </Text>
+          <StatusBadge status={Number(booking.status)} />
+            </View>
+            {booking.catalogueService?.imageUrls && (
+          <Image 
+            source={{ uri: booking.catalogueService.imageUrls[0] }} 
+            style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }} 
+          />
+            )}
+          </TouchableOpacity>
+        )}
 
-      {/* Messages */}
+        {/* Messages */}
       <FlatList
         data={messages}
         renderItem={renderItem}
@@ -207,7 +212,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    paddingTop: 50,
+    paddingTop: 20,
   },
   backButton: { marginRight: 10 },
   backText: { fontSize: 24, color: '#fff', fontWeight: 'bold' },

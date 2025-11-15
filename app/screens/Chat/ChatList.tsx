@@ -112,25 +112,66 @@ export const ChatList = ({ navigation }: ChatListScreenProps) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => navigation.navigate("Chat", { chatId: item.id })}
-                        style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}
+                        style={{ 
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            padding: 16, 
+                            marginHorizontal: 12,
+                            marginVertical: 6,
+                            backgroundColor: COLORS.card,
+                            borderRadius: 12,
+                            shadowColor: '#000',
+                            borderWidth: 1,
+                            borderColor: COLORS.placeholder,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 3,
+                        }}
                     >
                         <Image 
-                            source={{ uri: item.product?.catalogueService?.imageUrls?.[0] || 'https://via.placeholder.com/60' }} 
-                            style={{ height: 60, width: 60, borderRadius: 45 }} 
+                            source={{ uri: item.otherParticipantDetails?.profileImageUrl || 'https://via.placeholder.com/50' }} 
+                            style={{ 
+                                height: 50, 
+                                width: 50, 
+                                borderRadius: 25,
+                                borderWidth: 2,
+                                borderColor: COLORS.placeholder,
+                            }} 
                         />
-                        <View style={{ marginLeft: 16 }}>
-                            <Text style={{ fontSize: 12, color: COLORS.black, opacity: .5 }}>{item.id}</Text>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{item.otherParticipantDetails?.firstName} {item.otherParticipantDetails?.lastName}</Text>
-                            <Text style={{ color: '#888' }}>{item.lastMessage || 'Last message preview...'}</Text>
-                            <Text>{item.updatedAt?.toDate().toLocaleString() || 'Unknown date'}</Text>
+                        <View style={{ flex: 1, marginLeft: 12, marginRight: 8 }}>
+                            <Text 
+                                style={{ fontSize: 16, fontWeight: '600', color: COLORS.title }}
+                                numberOfLines={1}
+                            >
+                                {item.otherParticipantDetails?.firstName} {item.otherParticipantDetails?.lastName}
+                            </Text>
+                            <Text 
+                                style={{ color: COLORS.title, opacity: 0.7, marginTop: 4, fontSize: 14 }}
+                                numberOfLines={1}
+                            >
+                                {item.lastMessage || 'No messages yet'}
+                            </Text>
+                            <Text style={{ fontSize: 11, color: COLORS.title, opacity: 0.5, marginTop: 2 }}>
+                                {item.updatedAt?.toDate().toLocaleString() || 'Unknown date'}
+                            </Text>
                         </View>
+                        <Image 
+                            source={{ uri: item.product?.catalogueService?.imageUrls?.[0] || 'https://via.placeholder.com/60' }} 
+                            style={{ 
+                                height: 60, 
+                                width: 60, 
+                                borderRadius: 8,
+                                borderWidth: 1,
+                                borderColor: COLORS.placeholder,
+                            }} 
+                        />
                     </TouchableOpacity>
                 )}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
             />
-            {/* <Button title="Start New Chat" onPress={() => navigation.navigate("NewChat")} /> */}
         </View>
     );
 };
