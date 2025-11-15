@@ -16,12 +16,13 @@ import {
 import storage from '@react-native-firebase/storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import { Booking } from '../../services/BookingServices';
 import { Timestamp } from '@react-native-firebase/firestore';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import StatusBadge from '../../components/StatusBadge';
+import ImageViewer from "react-native-image-zoom-viewer";
 
 type ChatScreenProps = StackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -38,6 +39,9 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
   const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [imageList, setImageList] = useState<string[]>([]);
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
 
@@ -118,12 +122,18 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
           text: data.message,
           createdAt: data.timestamp?.toDate() || new Date(),
           userId: data.userId,
-          userName: data.userName || 'User',
+          userName: `${otherUser?.firstName} ${otherUser?.lastName}` || 'User',
           imageUrl: data.imageUrl || null,     // NEW
         };
       });
 
       setMessages(fetchedMessages);
+      const fetchedImages = fetchedMessages
+        .filter(m => m.imageUrl)
+        .map(m => m.imageUrl as string);
+
+      setImageList(fetchedImages);
+
     });
 
     return () => unsubscribe();
@@ -158,11 +168,20 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
         <Text style={styles.userName}>{isMe ? 'You' : item.userName}</Text>
 
         {item.imageUrl ? (
-          <Image
-            source={{ uri: item.imageUrl }}
-            style={{ width: 200, height: 200, borderRadius: 10, marginBottom: 8 }}
-            resizeMode="cover"
-          />
+          <TouchableOpacity
+            onPress={() => {
+              const index = imageList.indexOf(item.imageUrl || '');
+              setPreviewIndex(index >= 0 ? index : 0);
+              setPreviewVisible(true);
+            }}
+          >
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={{ width: 200, height: 200, borderRadius: 10, marginBottom: 8 }}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+
         ) : (
           <Text style={styles.messageText}>{item.text}</Text>
         )}
@@ -255,6 +274,32 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
         </TouchableOpacity>
       </View>
 
+      {/* Image Preview Modal */}
+      <Modal visible={previewVisible} transparent>
+        <ImageViewer
+          imageUrls={imageList.map(uri => ({ url: uri }))}
+          index={previewIndex}
+          enableSwipeDown
+          onSwipeDown={() => setPreviewVisible(false)}
+          onCancel={() => setPreviewVisible(false)}
+        />
+
+        {/* Optional Close Button */}
+        <TouchableOpacity
+          onPress={() => setPreviewVisible(false)}
+          style={{
+            position: 'absolute',
+            top: 40,
+            right: 20,
+            zIndex: 10,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: 10,
+            borderRadius: 40,
+          }}
+        >
+          <Ionicons name="close" size={30} color="#fff" />
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
