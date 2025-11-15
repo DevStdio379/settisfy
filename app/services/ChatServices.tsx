@@ -1,21 +1,22 @@
 import firestore from '@react-native-firebase/firestore';
 import { Booking } from './BookingServices';
 
+/**
+ * Get existing chat between two users or create a new one.
+ */
 export const getOrCreateChat = async (
   userId: string,
   otherUserId: string,
-  booking?: Booking
+  bookingId?: string,
 ): Promise<string | null> => {
   try {
     const chatRef = firestore().collection('chats');
 
-    // 1️⃣ Query chats that include the current user
-    const chatQuery = await chatRef
-      .where('participants', 'array-contains', userId)
-      .get();
+    // 1️⃣ Find chats that include userId
+    const snapshot = await chatRef.where('participants', 'array-contains', userId).get();
 
-    // 2️⃣ Check manually for matching participants and booking
-    for (const docSnap of chatQuery.docs) {
+    // 2️⃣ Check manually for the correct pair + booking
+    for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
 
       const sameParticipants =
@@ -23,30 +24,29 @@ export const getOrCreateChat = async (
         data.participants.includes(otherUserId);
 
       const sameBooking =
-        booking &&
-        (data.booking?.id === booking.id || data.bookingId === booking.id);
+        bookingId &&
+        (data.bookingId === bookingId);
 
       if (sameParticipants && sameBooking) {
-        // ✅ Existing chat found
+        // ✅ Chat already exists
         return docSnap.id;
       }
     }
 
-    // 3️⃣ Otherwise create new chat
+    // 3️⃣ Otherwise, create a new chat
     const newChat = {
       participants: [userId, otherUserId],
       createdAt: firestore.FieldValue.serverTimestamp(),
       updatedAt: firestore.FieldValue.serverTimestamp(),
       lastMessage: '',
-      booking: booking || null,
-      bookingId: booking?.id || null,
+      bookingId: bookingId || null,
     };
 
     const newChatRef = await chatRef.add(newChat);
-    console.log('💬 New chat created:', newChatRef.id);
     return newChatRef.id;
+
   } catch (error) {
-    console.error('❌ Error creating or fetching chat:', error);
+    console.error('Error creating or fetching chat: ', error);
     return null;
   }
 };

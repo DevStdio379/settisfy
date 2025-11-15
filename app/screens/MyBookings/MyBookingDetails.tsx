@@ -84,7 +84,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
     const onClick = (i: any) => scrollViewTabContent.current.scrollTo({ x: i * SIZES.width });
 
     const handleChat = async (userId: string, otherUserId: string) => {
-        const chatId = await getOrCreateChat(userId, otherUserId, booking);
+        const chatId = await getOrCreateChat(userId, otherUserId, booking.id);
         if (chatId) {
             navigation.navigate("Chat", { chatId: chatId });
         }

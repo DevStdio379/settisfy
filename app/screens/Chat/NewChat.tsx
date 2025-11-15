@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
-import { fetchAllUsers, User, useUser } from '../../context/UserContext';
+import { User, useUser } from '../../context/UserContext';
 import { getOrCreateChat } from '../../services/ChatServices';
 
 
@@ -10,7 +10,7 @@ type NewChatScreenProps = StackScreenProps<RootStackParamList, 'NewChat'>
 
 export const NewChat = ({ navigation }: NewChatScreenProps) => {
   const [users, setUsers] = useState<User[]>([]);
-  const { user } = useUser();
+  const { user, fetchAllUsers } = useUser();
 
   useEffect(() => {
     const fetchUsers = async () => {

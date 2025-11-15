@@ -7,15 +7,14 @@ import { User, useUser } from '../../context/UserContext';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { auth, db } from '../../services/firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Avatar } from 'react-native-gifted-chat';
 import { COLORS } from '../../constants/theme';
-import { Booking } from '../../services/BookingServices';
+import { Booking, fetchSelectedBooking } from '../../services/BookingServices';
 
 type ChatListScreenProps = StackScreenProps<RootStackParamList, 'ChatList'>
 
 export const ChatList = ({ navigation }: ChatListScreenProps) => {
     const { user } = useUser();
-    const [chats, setChats] = useState<{ id: string; participants: string[]; otherParticipantDetails?: User; lastMessage?: string; booking?: Booking; updatedAt?: any; }[]>([]);
+    const [chats, setChats] = useState<{ id: string; participants: string[]; otherParticipantDetails?: User; lastMessage?: string; booking?: Booking; product?: Booking; updatedAt?: any; }[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchUsersByIds = async (userIds: string[]): Promise<User[]> => {
@@ -25,10 +24,10 @@ export const ChatList = ({ navigation }: ChatListScreenProps) => {
     };
 
     const fetchChats = async () => {
-        if (!auth.currentUser) return;
+        if (!user) return;
         const chatQuery = query(
             collection(db, "chats"),
-            where("participants", "array-contains", auth.currentUser.uid)
+            where("participants", "array-contains", user?.uid)
         );
 
         const snapshot = await getDocs(chatQuery);
@@ -37,7 +36,7 @@ export const ChatList = ({ navigation }: ChatListScreenProps) => {
             return {
                 id: doc.id,
                 participants: data.participants || [],
-                productId: data.productId || null,
+                bookingId: data.bookingId || null,
                 updatedAt: data.updatedAt || null,
                 ...data,
             };
@@ -45,21 +44,21 @@ export const ChatList = ({ navigation }: ChatListScreenProps) => {
 
         if (!user) return;
         const users = await fetchUsersByIds(chatList.map((chat) => chat.participants.find((uid: string) => uid !== user.uid)));
-        // const chatListWithOtherUserDetails = await Promise.all(chatList.map(async (chat) => {
-        //     const otherParticipantId = chat.participants.find((uid: string) => uid !== user.uid);
-        //     const otherParticipantDetails = users.find((user) => user.uid === otherParticipantId);
-        //     let product: Product | undefined = undefined;
-        //     if (chat.productId) {
-        //         const fetchedProduct = await fetchSelectedProduct(chat.productId);
-        //         product = fetchedProduct === null ? undefined : fetchedProduct;
-        //     }
-        //     return {
-        //         ...chat,
-        //         otherParticipantDetails,
-        //         product
-        //     };
-        // }));
-        // setChats(chatListWithOtherUserDetails);
+        const chatListWithOtherUserDetails = await Promise.all(chatList.map(async (chat) => {
+            const otherParticipantId = chat.participants.find((uid: string) => uid !== user.uid);
+            const otherParticipantDetails = users.find((user) => user.uid === otherParticipantId);
+            let product: Booking | undefined = undefined;
+            if (chat.bookingId) {
+                const fetchedBooking = await fetchSelectedBooking(chat.bookingId);
+                product = fetchedBooking === null ? undefined : fetchedBooking;
+            }
+            return {
+                ...chat,
+                otherParticipantDetails,
+                product
+            };
+        }));
+        setChats(chatListWithOtherUserDetails);
     };
 
     useEffect(() => {
@@ -115,7 +114,10 @@ export const ChatList = ({ navigation }: ChatListScreenProps) => {
                         onPress={() => navigation.navigate("Chat", { chatId: item.id })}
                         style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' }}
                     >
-                        <Image source={{ uri: item.booking?.catalogueService.imageUrls[0] }} style={{ height: 60, width: 60, borderRadius: 45 }} />
+                        <Image 
+                            source={{ uri: item.product?.catalogueService?.imageUrls?.[0] || 'https://via.placeholder.com/60' }} 
+                            style={{ height: 60, width: 60, borderRadius: 45 }} 
+                        />
                         <View style={{ marginLeft: 16 }}>
                             <Text style={{ fontSize: 12, color: COLORS.black, opacity: .5 }}>{item.id}</Text>
                             <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{item.otherParticipantDetails?.firstName} {item.otherParticipantDetails?.lastName}</Text>
