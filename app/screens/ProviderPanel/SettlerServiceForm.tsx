@@ -9,7 +9,7 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { CategoryDropdown } from '../../components/CategoryDropdown';
 import { categories } from '../../constants/ServiceCategory';
-import { createSettlerService, deleteSettlerService, fetchSelectedSettlerService, updateSettlerService } from '../../services/SettlerServiceServices';
+import { createSettlerService, deleteSettlerService, fetchSelectedSettlerService, updateSettlerService, uploadImages } from '../../services/SettlerServiceServices';
 import { useUser } from '../../context/UserContext';
 import { Catalogue, fetchAllCatalogue } from '../../services/CatalogueServices';
 import { serviceLocation } from '../../constants/ServiceLocation';
@@ -47,12 +47,16 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
     try {
       // 🔹 UPDATE existing service
       if (settlerService) {
+
+        // upload image and get url
+        const imageUrls = await uploadImages(settlerService?.id || '', serviceCardImageUrls);
+
         await updateSettlerService(settlerService.id || '', {
           settlerId: user?.uid || '',
           settlerFirstName: user?.firstName || '',
           settlerLastName: user?.lastName || '',
           selectedCatalogue: selectedCatalogue,
-          serviceCardImageUrls,
+          serviceCardImageUrls: imageUrls,
           serviceCardBrief,
           isAvailableImmediately,
           availableDays,
@@ -267,15 +271,15 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
           paddingTop: 8,
         }}>
           <TouchableOpacity
-              style={{ padding: 8 }}
-              onPress={() => {
-                if (index === 0) navigation.goBack();
-                else if (index === 4) setIndex(0);
-                else setIndex(prev => Math.max(prev - 1, 0))
-              }}
-            >
-              <Ionicons name="chevron-back-outline" size={28} color={COLORS.title} />
-            </TouchableOpacity>
+            style={{ padding: 8 }}
+            onPress={() => {
+              if (index === 0) navigation.goBack();
+              else if (index === 4) setIndex(0);
+              else setIndex(prev => Math.max(prev - 1, 0))
+            }}
+          >
+            <Ionicons name="chevron-back-outline" size={28} color={COLORS.title} />
+          </TouchableOpacity>
           <Text style={{
             fontSize: 18,
             fontWeight: 'bold',
@@ -359,99 +363,16 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                   )
                 }
                 <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center', gap: 10, paddingTop: 10 }}>
-                  {/* Large Preview Image */}
-                  {selectedServiceCardImageUrls ? (
-                    <View style={{ flex: 1, width: '100%', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                      <Image
-                        source={{ uri: selectedServiceCardImageUrls }}
-                        style={{
-                          width: '100%',
-                          height: 300,
-                          borderRadius: 10,
-                          marginBottom: 10,
-                        }}
-                        resizeMode="cover"
-                      />
-                      {/* Delete Button */}
-                      <TouchableOpacity
-                        onPress={() => deleteImage()}
-                        style={{
-                          position: 'absolute',
-                          top: 10,
-                          right: 10,
-                          backgroundColor: 'rgba(0,0,0,0.6)',
-                          padding: 8,
-                          borderRadius: 20,
-                        }}
-                      >
-                        <Ionicons name="trash-outline" size={24} color={COLORS.white} />
-                      </TouchableOpacity>
-                      {/* Thumbnail List */}
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {serviceCardImageUrls.map((imageUri, index) => (
-                          <TouchableOpacity key={index} onPress={() => setSelectedServiceCardImageUrls(imageUri)}>
-                            <Image
-                              source={{ uri: imageUri }}
-                              style={{
-                                width: 80,
-                                height: 80,
-                                marginRight: 10,
-                                borderRadius: 10,
-                                borderWidth: selectedServiceCardImageUrls === imageUri ? 3 : 0,
-                                borderColor: selectedServiceCardImageUrls === imageUri ? '#007bff' : 'transparent',
-                              }}
-                            />
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  ) : (
-                    <View
-                      style={{
-                        width: '100%',
-                        height: 300,
-                        borderRadius: 10,
-                        marginBottom: 10,
-                        backgroundColor: COLORS.card,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Text style={{ color: COLORS.blackLight }}>No image selected</Text>
-                    </View>
-                  )}
-                  <View style={{ width: '100%', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                    <TouchableOpacity
-                      style={{
-                        padding: 15,
-                        width: '100%',
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: COLORS.black,
-                      }}
-                      onPress={() => selectImages()}
-                    >
-                      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                        <Ionicons name="image-outline" size={24} color={COLORS.black} style={{ marginRight: 10 }} />
-                        <Text style={{ color: COLORS.black, fontSize: 16, fontWeight: 'bold' }}>Add photos</Text>
-                      </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={{
-                        padding: 15,
-                        width: '100%',
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: COLORS.black,
-                      }}
-                      onPress={() => cameraImage()}
-                    >
-                      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                        <Ionicons name="image-outline" size={24} color={COLORS.black} style={{ marginRight: 10 }} />
-                        <Text style={{ color: COLORS.black, fontSize: 16, fontWeight: 'bold' }}>Use Camera</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
+                  <AttachmentForm
+                    title="Service Card Image"
+                    description="Upload your service card image here."
+                    showRemark={false}
+                    isEditable={loading ? false : true}
+                    initialImages={settlerService?.serviceCardImageUrls || []}
+                    onChange={(data) => {
+                      setServiceCardImageUrls(data.images)
+                    }}
+                  />
                 </View>
                 <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Card Bio. / Brief</Text>
                 <Input
