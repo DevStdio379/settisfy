@@ -1436,7 +1436,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                             </TouchableOpacity>
                                         )}
                                     /> */}
-                                    {(Number(booking.status) <= 11 && booking.status !== 6) && user?.uid === booking.settlerId && (
+                                    {(Number(booking.status) <= 10) && user?.uid === booking.settlerId && (
                                         <View style={{ marginTop: 40 }} >
                                             <TouchableOpacity
                                                 activeOpacity={0.8}

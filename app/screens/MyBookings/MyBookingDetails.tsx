@@ -1597,7 +1597,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                             </TouchableOpacity>
                                         )}
                                     /> */}
-                                    {(Number(booking.status) <= 11 && Number(booking.status) !== 6) && (
+                                    {(Number(booking.status) <= 10) && (
                                         <View style={{ marginTop: 40 }} >
                                             <TouchableOpacity
                                                 activeOpacity={0.8}
