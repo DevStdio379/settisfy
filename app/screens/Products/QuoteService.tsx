@@ -7,7 +7,6 @@ import {
 import { COLORS, SIZES } from "../../constants/theme";
 import { StackScreenProps } from "@react-navigation/stack";
 import { RootStackParamList } from "../../navigation/RootStackParamList";
-import Swiper from "react-native-swiper";
 import { Calendar } from "react-native-calendars";
 import { format } from "date-fns";
 import { GlobalStyleSheet } from "../../constants/StyleSheet";
@@ -26,6 +25,7 @@ import { generateId } from "../../helper/HelperFunctions";
 import AttachmentForm from "../../components/Forms/AttachmentForm";
 import firestore from '@react-native-firebase/firestore';
 import { fetchSystemParameters, SystemParameter } from "../../services/SystemParameterServices";
+import ImageSwiper from "../../components/ImageSwiper";
 
 type QuoteServiceScreenProps = StackScreenProps<RootStackParamList, "QuoteService">;
 
@@ -371,29 +371,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
         {index === 0 && (
           <View>
             <View style={{ height: 250, paddingHorizontal: 10 }}>
-              <Swiper
-                dotColor={COLORS.primaryLight}
-                activeDotColor={COLORS.primary}
-                autoplay={false}
-                autoplayTimeout={2}
-                showsPagination={Platform.OS === "android" ? true : false}
-                loop={false}
-              >
-                {service.imageUrls.map((data, index) => (
-                  <View key={index}>
-                    <Image
-                      style={{
-                        backgroundColor: COLORS.placeholder,
-                        height: 250,
-                        width: '100%',
-                        resizeMode: 'cover',
-                        borderRadius: 20,
-                      }}
-                      source={{ uri: data }}
-                    />
-                  </View>
-                ))}
-              </Swiper>
+              <ImageSwiper imageUrls={service.imageUrls} />
             </View>
             <View style={{ paddingTop: 20, paddingHorizontal: 20 }}>
               <TabButtonStyleHome
