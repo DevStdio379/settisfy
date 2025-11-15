@@ -4,6 +4,8 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { COLORS } from '../../constants/theme';
 import Input from '../Input/Input';
 import { useAttachmentForm } from '../../helper/useAttachmentForm';
+import Modal from 'react-native-modal';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 interface AttachmentFormProps {
   title: string;
@@ -44,6 +46,8 @@ const AttachmentForm: React.FC<AttachmentFormProps> = ({
     handleRemarkChange,
   } = useAttachmentForm(initialImages, initialRemark, onChange);
 
+  const [isPreviewVisible, setPreviewVisible] = React.useState(false);
+
   const handleSubmit = async () => {
     if (imageUrls.length === 0) {
       Alert.alert('Please attach at least one file.');
@@ -80,33 +84,38 @@ const AttachmentForm: React.FC<AttachmentFormProps> = ({
         {selectedImageUrl ? (
           <View style={{ width: '100%', position: 'relative' }}>
             {isPdf(selectedImageUrl) ? (
-              <View
-                style={{
-                  width: '100%',
-                  height: 200,
-                  borderRadius: 10,
-                  marginBottom: 10,
-                  backgroundColor: COLORS.card,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="document-text-outline" size={64} color={COLORS.blackLight} />
-                <Text style={{ marginTop: 8, color: COLORS.blackLight }}>
-                  {getFilename(selectedImageUrl)}
-                </Text>
-              </View>
+              <TouchableOpacity onPress={() => setPreviewVisible(true)}>
+                <View
+                  style={{
+                    width: '100%',
+                    height: 200,
+                    borderRadius: 10,
+                    marginBottom: 10,
+                    backgroundColor: COLORS.card,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Ionicons name="document-text-outline" size={64} color={COLORS.blackLight} />
+                  <Text style={{ marginTop: 8, color: COLORS.blackLight }}>
+                    {getFilename(selectedImageUrl)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             ) : (
-              <Image
-                source={{ uri: selectedImageUrl }}
-                style={{
-                  width: '100%',
-                  height: 300,
-                  borderRadius: 10,
-                  marginBottom: 10,
-                }}
-                resizeMode="cover"
-              />
+              <TouchableOpacity onPress={() => setPreviewVisible(true)}>
+                <Image
+                  source={{ uri: selectedImageUrl }}
+                  style={{
+                    width: '100%',
+                    height: 300,
+                    borderRadius: 10,
+                    marginBottom: 10,
+                  }}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+
             )}
 
             {/* Delete Button */}
@@ -256,6 +265,56 @@ const AttachmentForm: React.FC<AttachmentFormProps> = ({
           <Text style={{ color: 'white', fontWeight: 'bold' }}>{buttonText || 'Submit'}</Text>
         </TouchableOpacity>
       )}
+
+      {/* Preview Modal */}
+      <Modal
+        isVisible={isPreviewVisible}
+        onBackdropPress={() => setPreviewVisible(false)}
+        onBackButtonPress={() => setPreviewVisible(false)}
+        style={{ margin: 0 }}
+      >
+        <View style={{ flex: 1, backgroundColor: 'black' }}>
+          {/* PDF Preview */}
+          {selectedImageUrl && isPdf(selectedImageUrl) ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Ionicons name="document-text-outline" size={120} color="white" />
+              <Text style={{ marginTop: 10, color: 'white', fontSize: 18 }}>
+                {getFilename(selectedImageUrl)}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setPreviewVisible(false)}
+                style={{
+                  position: 'absolute',
+                  top: 50,
+                  right: 20,
+                  padding: 10,
+                }}
+              >
+                <Ionicons name="close" size={35} color="white" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            /* Image Zoom Preview */
+            <ImageViewer
+              imageUrls={imageUrls.map((uri) => ({ url: uri }))}
+              index={imageUrls.indexOf(selectedImageUrl ?? '')}
+              enableSwipeDown
+              onSwipeDown={() => setPreviewVisible(false)}
+              onCancel={() => setPreviewVisible(false)}
+              renderIndicator={() => <></>}
+              backgroundColor="black"
+            />
+          )}
+        </View>
+      </Modal>
+
     </View>
   );
 };
