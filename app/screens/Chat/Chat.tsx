@@ -13,6 +13,8 @@ import {
   updateDoc,
   getDoc,
 } from 'firebase/firestore';
+import storage from '@react-native-firebase/storage';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { COLORS } from '../../constants/theme';
@@ -25,12 +27,12 @@ type ChatScreenProps = StackScreenProps<RootStackParamList, 'Chat'>;
 
 interface Message {
   _id: string;
-  text: string;
+  text?: string;
   createdAt: Date;
   userId: string;
   userName: string;
+  imageUrl?: string;  // NEW
 }
-
 export const Chat = ({ route, navigation }: ChatScreenProps) => {
   const { chatId } = route.params as { chatId: string };
   const { user } = useUser();
@@ -39,14 +41,49 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
   const [otherUser, setOtherUser] = useState<User | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
 
+  const handleAttachImage = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+      });
+
+      if (result.didCancel || !result.assets?.[0].uri) return;
+
+      const uri = result.assets[0].uri;
+
+      const filename = `chatImages/${chatId}/${Date.now()}.jpg`;
+      const storageRef = storage().ref(filename);
+
+      await storageRef.putFile(uri);
+      const downloadUrl = await storageRef.getDownloadURL();
+
+      await addDoc(collection(db, 'chats', chatId, 'messages'), {
+        userId: user?.uid,
+        userName: auth.currentUser?.displayName || 'User',
+        imageUrl: downloadUrl,
+        message: '',
+        timestamp: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, 'chats', chatId), {
+        lastMessage: "📷 Photo",
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error("Image upload error:", err);
+    }
+  };
+
+
   useEffect(() => {
     const fetchChatDetails = async () => {
       try {
         const chatDoc = await getDoc(doc(db, 'chats', chatId));
         if (chatDoc.exists()) {
           const chatData = chatDoc.data();
-            const otherUserId = chatData.participants?.find((id: string) => id !== user?.uid);
-          
+          const otherUserId = chatData.participants?.find((id: string) => id !== user?.uid);
+
           if (otherUserId) {
             const userData = await fetchSelectedUser(otherUserId);
             setOtherUser(userData);
@@ -82,8 +119,10 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
           createdAt: data.timestamp?.toDate() || new Date(),
           userId: data.userId,
           userName: data.userName || 'User',
+          imageUrl: data.imageUrl || null,     // NEW
         };
       });
+
       setMessages(fetchedMessages);
     });
 
@@ -113,16 +152,28 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
 
   const renderItem = ({ item }: { item: Message }) => {
     const isMe = item.userId === user?.uid;
+
     return (
       <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.theirMessage]}>
         <Text style={styles.userName}>{isMe ? 'You' : item.userName}</Text>
-        <Text style={styles.messageText}>{item.text}</Text>
+
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={{ width: 200, height: 200, borderRadius: 10, marginBottom: 8 }}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.messageText}>{item.text}</Text>
+        )}
+
         <Text style={styles.timestamp}>
           {item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </View>
     );
   };
+
 
   return (
     <View style={styles.container}>
@@ -131,7 +182,7 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
-        
+
         {otherUser?.profileImageUrl ? (
           <Image source={{ uri: otherUser.profileImageUrl }} style={styles.profileImage} />
         ) : (
@@ -141,7 +192,7 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
             </Text>
           </View>
         )}
-        
+
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerName}>{otherUser?.firstName} {otherUser?.lastName}</Text>
           {booking && (
@@ -153,30 +204,30 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
       </View>
 
       {/* Booking Info Card */}
-        {booking && (
-          <TouchableOpacity 
-            style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}
-            onPress={() => navigation.navigate('MyBookingDetails', { booking: booking })}
-          >
-            <View style={{ flex: 1 }}>
-          <Text style={styles.bookingTitle}>Booking Details</Text>
-          <Text style={styles.bookingInfo}>
-            Date: {typeof booking.selectedDate === 'string' 
-            ? booking.selectedDate 
-            : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
-          </Text>
-          <StatusBadge status={Number(booking.status)} />
-            </View>
-            {booking.catalogueService?.imageUrls && (
-          <Image 
-            source={{ uri: booking.catalogueService.imageUrls[0] }} 
-            style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }} 
-          />
-            )}
-          </TouchableOpacity>
-        )}
+      {booking && (
+        <TouchableOpacity
+          style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}
+          onPress={() => navigation.navigate('MyBookingDetails', { booking: booking })}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bookingTitle}>Booking Details</Text>
+            <Text style={styles.bookingInfo}>
+              Date: {typeof booking.selectedDate === 'string'
+                ? booking.selectedDate
+                : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
+            </Text>
+            <StatusBadge status={Number(booking.status)} />
+          </View>
+          {booking.catalogueService?.imageUrls && (
+            <Image
+              source={{ uri: booking.catalogueService.imageUrls[0] }}
+              style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }}
+            />
+          )}
+        </TouchableOpacity>
+      )}
 
-        {/* Messages */}
+      {/* Messages */}
       <FlatList
         data={messages}
         renderItem={renderItem}
@@ -187,6 +238,10 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
 
       {/* Input */}
       <View style={styles.inputContainer}>
+        <TouchableOpacity onPress={handleAttachImage} style={{ marginRight: 8 }}>
+          <Ionicons name="image-outline" size={28} color={COLORS.primary} />
+        </TouchableOpacity>
+
         <TextInput
           value={input}
           onChangeText={setInput}
@@ -199,6 +254,7 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
           <Text style={styles.sendText}>Send</Text>
         </TouchableOpacity>
       </View>
+
     </View>
   );
 };
