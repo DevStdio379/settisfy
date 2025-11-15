@@ -120,7 +120,7 @@ const BookingSummaryCard: React.FC<Props> = ({
                 <Image source={{ uri: images[0] }} style={{ width: 100, height: 100, borderRadius: 8, marginRight: 16 }} />
                 <View style={{ flex: 1, marginTop: 5 }}>
                     <Text style={{ fontSize: 16, marginBottom: 5 }}>
-                        <Text style={{ color: '#E63946', fontWeight: 'bold' }}>RM{booking.catalogueService.basePrice}</Text> / Session
+                        <Text style={{ color: '#E63946', fontWeight: 'bold' }}>RM{Number(booking.catalogueService.basePrice).toFixed(2)}</Text> / Session
                     </Text>
                     <Text
                         style={{
@@ -147,7 +147,7 @@ const BookingSummaryCard: React.FC<Props> = ({
             {/* Base Price */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                 <Text style={{ fontSize: 14, color: '#333' }}>Service Price</Text>
-                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>RM{booking.catalogueService.basePrice}</Text>
+                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>RM{Number(booking.catalogueService.basePrice).toFixed(2)}</Text>
             </View>
 
             {/* Addons Comparison */}
