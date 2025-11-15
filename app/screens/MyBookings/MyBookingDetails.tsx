@@ -35,25 +35,15 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
     const { user } = useUser();
     const [settler, setSettler] = useState<User>();
-    const mapRef = useRef<MapView | null>(null);
     const [booking, setBooking] = useState<Booking>(route.params.booking);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const [images, setImages] = useState<string[]>([]);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [status, setStatus] = useState<number>(0);
     const [timeLeft, setTimeLeft] = useState<number>(0);
 
-    const scrollViewHome = useRef<any>(null);
-    const [isFocused, setisFocused] = useState(false);
     const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report', 'Refund Issued'];
     const scrollX = useRef(new Animated.Value(0)).current;
     const [activeIndex, setActiveIndex] = useState(0);
-
-    const CODE_LENGTH = 7;
-    const [returnCode, setCollectionCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
-    const [validationMessage, setValidationMessage] = useState<string | null>(null);
-    const inputs = useRef<Array<TextInput | null>>(Array(CODE_LENGTH).fill(null));
     const [review, setReview] = useState<Review>();
     const [systemParameters, setSystemParameters] = useState<SystemParameter | null>(null);
 
@@ -62,16 +52,12 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
     const [selectedSettlerId, setSelectedSettlerId] = useState<string>('');
     const [selectedSettlerFirstName, setSelectedSettlerFirstName] = useState<string>('');
     const [selectedSettlerLastName, setSelectedSettlerLastName] = useState<string>('');
-    const [selectedSettlerEvidenceImageUrl, setSelectedSettlerEvidenceImageUrl] = useState<string | null>(null);
 
     const [selectedNotesToSettlerImageUrl, setSelectedNotesToSettlerImageUrl] = useState<string | null>(null);
-    const [notesToSettlerImageUrls, setNotesToSettlerImageUrls] = useState<string[]>([]);
-    const [notesToSettler, setNotesToSettler] = useState<string>('');
     const [bookingWithSettlerProfiles, setBookingWithSettlerProfiles] = useState<BookingWithUser[]>();
     const [subScreenIndex, setSubScreenIndex] = useState(0);
     const [index, setIndex] = useState(0);
     const [profileIndex, setProfileIndex] = useState(0);
-    const [reportIndex, setReportIndex] = useState(0);
     const [localAddons, setLocalAddons] = useState<DynamicOption[]>([]);
     const [adjustedTotal, setAdjustedTotal] = useState<number>(booking.total || 0);
     const [isManualQuoteCompleted, setIsManualQuoteCompleted] = useState(true);
@@ -92,66 +78,61 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
     const fetchData = async () => {
         try {
-            if (booking) {
-                // ✅ Fetch the latest booking data first
-                const selectedBooking = await fetchSelectedBooking(booking.id || 'undefined');
+            if (!booking?.id) return;
 
-                if (selectedBooking) {
-                    // ✅ Update the local booking state
-                    setBooking(selectedBooking);
-                    // ✅ Set status from the fresh data
-                    setStatus(Number(selectedBooking.status));
-                }
+            // ✅ Fetch the latest booking data first
+            const selectedBooking = await fetchSelectedBooking(booking.id);
+            if (!selectedBooking) return;
 
-                // Fetch system parameters
-                const systemParams = await fetchSystemParameters();
-                if (systemParams) {
-                    setSystemParameters(systemParams);
-                }
+            // ✅ Update the local booking state
+            setBooking(selectedBooking);
+            setStatus(Number(selectedBooking.status));
 
-                if (selectedBooking?.settlerId) {
-                    const [fetchedSettler, fetchedReview] = await Promise.all([
-                        fetchSelectedUser(selectedBooking.settlerId),
-                        getReviewByBookingId(selectedBooking.id || 'undefined'),
-                    ]);
+            // ✅ Fetch system parameters in parallel
+            const systemParamsPromise = fetchSystemParameters();
 
-                    if (fetchedSettler) setSettler(fetchedSettler);
-                    if (fetchedReview?.id) setReview(fetchedReview);
-                }
+            // ✅ Conditionally fetch settler and review data
+            const settlerPromises = selectedBooking.settlerId
+                ? [
+                    fetchSelectedUser(selectedBooking.settlerId),
+                    getReviewByBookingId(selectedBooking.id!)
+                ]
+                : [];
 
-                if (selectedBooking?.addons) {
-                    const initializedAddons = selectedBooking.addons.map(addon => ({
-                        ...addon,
-                        subOptions: addon.subOptions.map(opt => ({ ...opt, isCompleted: true })),
-                    }));
-                    setLocalAddons(initializedAddons);
-                    setAdjustedTotal(Number(selectedBooking.total || 0));
-                }
 
-                if (selectedBooking?.manualQuoteDescription && selectedBooking?.manualQuotePrice) {
-                    setIsManualQuoteCompleted(true);
-                }
+            // ✅ Run all promises in parallel
+            const [systemParams, settlerData] = await Promise.all([
+                systemParamsPromise,
+                Promise.all(settlerPromises),
+            ]);
 
-                if (selectedBooking?.acceptors && selectedBooking.acceptors.length > 0) {
-                    const bookingWithSettlerProfilesData = await Promise.all(
-                        selectedBooking.acceptors.map(async (profile) => {
-                            const [settlerProfileData, settlerJobProfile] = await Promise.all([
-                                fetchSelectedUser(profile.settlerId),
-                                fetchSelectedSettlerService(profile.settlerServiceId),
-                            ]);
-                            return {
-                                ...selectedBooking,
-                                settlerProfile: settlerProfileData,
-                                settlerJobProfile,
-                            };
-                        })
-                    );
-                    setBookingWithSettlerProfiles(bookingWithSettlerProfilesData);
-                }
+            // ✅ Update state with fetched data
+            if (systemParams) setSystemParameters(systemParams);
+            
+            if (settlerData.length) {
+                const [fetchedSettler, fetchedReview] = settlerData;
+                if (fetchedSettler) setSettler(fetchedSettler as User);
+                if (fetchedReview && 'id' in fetchedReview) setReview(fetchedReview as Review);
+            }
 
-                if (selectedBooking?.notesToSettlerImageUrls && selectedBooking.notesToSettlerImageUrls.length > 0) {
-                    setSelectedNotesToSettlerImageUrl(selectedBooking.notesToSettlerImageUrls[0]);
-                }
+            // ✅ Process addons
+            if (selectedBooking.addons) {
+                const initializedAddons = selectedBooking.addons.map(addon => ({
+                    ...addon,
+                    subOptions: addon.subOptions.map(opt => ({ ...opt, isCompleted: true })),
+                }));
+                setLocalAddons(initializedAddons);
+                setAdjustedTotal(Number(selectedBooking.total || 0));
+            }
+
+            // ✅ Check manual quote completion
+            if (selectedBooking.manualQuoteDescription && selectedBooking.manualQuotePrice) {
+                setIsManualQuoteCompleted(true);
+            }
+
+            // ✅ Set notes image
+            if (selectedBooking.notesToSettlerImageUrls?.length) {
+                setSelectedNotesToSettlerImageUrl(selectedBooking.notesToSettlerImageUrls[0]);
             }
         } catch (err) {
             console.error("Error in fetchData:", err);
