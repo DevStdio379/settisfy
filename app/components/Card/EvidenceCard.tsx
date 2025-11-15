@@ -1,6 +1,8 @@
 // EvidenceCard.tsx
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import Modal from 'react-native-modal';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 type EvidenceCardProps = {
     title?: string;
@@ -13,21 +15,53 @@ export default function EvidenceCard({
     imageUrls = [],
     remark = '',
 }: EvidenceCardProps) {
+    const [isPreviewVisible, setPreviewVisible] = useState(false);
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    const handleOpenPreview = (index: number) => {
+        setCurrentIndex(index);
+        setPreviewVisible(true);
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>{title}</Text>
+
             {imageUrls?.length ? (
                 <View style={styles.imageRow}>
                     {imageUrls.map((uri, i) => (
-                        <Image key={i} source={{ uri }} style={styles.thumb} />
+                        <TouchableOpacity key={i} onPress={() => handleOpenPreview(i)}>
+                            <Image source={{ uri }} style={styles.thumb} />
+                        </TouchableOpacity>
                     ))}
                 </View>
             ) : (
                 <Text style={styles.subtext}>No images</Text>
             )}
+
             <Text style={styles.subtext}>
                 {remark?.trim() ? remark : 'No remarks provided.'}
             </Text>
+
+            {/* Full-screen Preview Modal */}
+            <Modal
+                isVisible={isPreviewVisible}
+                onBackdropPress={() => setPreviewVisible(false)}
+                onBackButtonPress={() => setPreviewVisible(false)}
+                style={{ margin: 0 }}
+            >
+                <View style={{ flex: 1, backgroundColor: 'black' }}>
+                    <ImageViewer
+                        imageUrls={imageUrls.map((url) => ({ url }))}
+                        index={currentIndex}
+                        enableSwipeDown
+                        onSwipeDown={() => setPreviewVisible(false)}
+                        onCancel={() => setPreviewVisible(false)}
+                        renderIndicator={() => <></>}
+                        backgroundColor="black"
+                    />
+                </View>
+            </Modal>
         </View>
     );
 }
