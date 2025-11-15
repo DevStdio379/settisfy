@@ -9,12 +9,14 @@ import {
     StyleSheet,
     ActivityIndicator,
     RefreshControl,
+    Linking,
 } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootStackParamList';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { useUser, User } from '../../context/UserContext';
+import { fetchSystemParameters, SettlerResource } from '../../services/SystemParameterServices';
 
 type ProviderDashboardScreenProps = StackScreenProps<RootStackParamList, 'ProviderDashboard'>;
 
@@ -25,22 +27,15 @@ const ProviderDashboard = ({ navigation }: ProviderDashboardScreenProps) => {
     const { user } = useUser();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [lendings, setLendings] = useState<any[]>([]);
-
-    const tips = [
-        {
-            imageUri: 'https://firebasestorage.googleapis.com/v0/b/settisfy-2c8ca.firebasestorage.app/o/placeholders%2F44129.jpg?alt=media&token=d72b1e02-5d69-43bc-a67d-c5ff3f274823',
-            title: 'Help Your Service Stand Out',
-            description: 'Learn how to maximize your earnings by updating your registered services profile.',
-        },
-        {
-            imageUri: 'https://firebasestorage.googleapis.com/v0/b/settisfy-2c8ca.firebasestorage.app/o/placeholders%2F5862.jpg?alt=media&token=24c91e8b-8e39-4127-89b0-47f83168d25e',
-            title: 'Understand the Pricing Model',
-            description: 'Get to know how Settisfy pays you and the fee structure involved.',
-        },
-    ];
+    const [settlerResources, setSettlerResources] = useState<SettlerResource[]>();
 
     const fetchData = async () => {
+        // Fetch system parameters to get settler resources
+        const data = await fetchSystemParameters();
+        if (data.settlerResources) {
+            setSettlerResources(data.settlerResources);
+        }
+
         setLoading(false);
     };
 
@@ -53,15 +48,6 @@ const ProviderDashboard = ({ navigation }: ProviderDashboardScreenProps) => {
         fetchData().then(() => setRefreshing(false));
     }, []);
 
-    const handleChat = async (user: User, otherUser: User) => { };
-
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-        );
-    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -145,14 +131,23 @@ const ProviderDashboard = ({ navigation }: ProviderDashboardScreenProps) => {
                 {/* Tips Section */}
                 <Text style={styles.sectionTitle}>Service Provider Resources</Text>
 
-                {tips.map((tip, index) => (
-                    <View key={index} style={styles.tipCard}>
+                {settlerResources?.map((tip, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.tipCard}
+                        onPress={() => {
+                            if (tip?.link) {
+                                Linking.openURL(tip.link);
+                            }
+                        }}
+                        activeOpacity={0.85}
+                    >
                         <Image source={{ uri: tip.imageUri }} style={styles.tipImage} />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.tipTitle}>{tip.title}</Text>
                             <Text style={styles.tipDescription}>{tip.description}</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
         </View>
