@@ -359,17 +359,18 @@ const Profile = ({ navigation }: ProfileScreenProps) => {
                         <TouchableOpacity
                             activeOpacity={0.8}
                             style={{
-                                padding: 10,
-                                paddingHorizontal: 20,
+                                padding: 12,
+                                paddingHorizontal: 30,
                                 borderRadius: 30,
                                 flexDirection: 'row',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                backgroundColor: COLORS.primary,
                                 gap: 10
                             }}
                             onPress={() => handleSignOut()}
                         >
-                            <Text style={{ fontSize: 18, color: COLORS.black, lineHeight: 21, fontWeight: 'bold', textDecorationLine: 'underline' }}>Sign Out</Text>
+                            <Text style={{ fontSize: 18, color: COLORS.white, lineHeight: 21, fontWeight: 'bold' }}>Sign Out</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
