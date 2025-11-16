@@ -18,8 +18,7 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
   const { user } = useUser();
   const [activeJobs, setActiveJobs] = useState<any[]>([]);
   const [inactiveJobs, setInactiveJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const scrollViewHome = useRef<any>(null);
   const buttons = ['Active', 'Broadcast', 'History'];
@@ -62,8 +61,8 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
   }, [user?.uid]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData().then(() => setRefreshing(false));
+    setLoading(true);
+    fetchData().then(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -127,7 +126,7 @@ const MyRequests = ({ navigation, route }: MyRequestsScreenProps) => {
             style={{ width: SIZES.width, paddingTop: 10 }}
             key={index}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl refreshing={loading} onRefresh={onRefresh} />
             }
           >
             <View style={{}}>

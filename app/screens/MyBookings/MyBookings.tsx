@@ -121,15 +121,15 @@ const MyBookings = ({ navigation }: MyBookingsScreenProps) => {
                         showsVerticalScrollIndicator={false}
                         style={{ width: SIZES.width, paddingTop: 10 }}
                         key={index}
+                        refreshControl={
+                            <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+                        }
                     >
                         <View style={{}}>
                             {index === 0 && (
                                 <ScrollView
                                     showsVerticalScrollIndicator={false}
                                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 70, alignItems: 'flex-start' }}
-                                    refreshControl={
-                                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                                    }
                                 >
                                     <View style={[GlobalStyleSheet.container, { paddingHorizontal: 15, paddingBottom: 40, paddingTop: 10 }]}>
                                         <View>
@@ -177,9 +177,6 @@ const MyBookings = ({ navigation }: MyBookingsScreenProps) => {
                                 <ScrollView
                                     showsVerticalScrollIndicator={false}
                                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 70, alignItems: 'flex-start' }}
-                                    refreshControl={
-                                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                                    }
                                 >
                                     <View style={[GlobalStyleSheet.container, { paddingHorizontal: 15, paddingBottom: 40, paddingTop: 10 }]}>
                                         <View>
