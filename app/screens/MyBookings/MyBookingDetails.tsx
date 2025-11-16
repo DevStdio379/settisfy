@@ -42,7 +42,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
     const [status, setStatus] = useState<number>(0);
     const [timeLeft, setTimeLeft] = useState<number>(0);
 
-    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report', 'Refund Issued'];
+    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Warranty Report', 'Refund Issued'];
     const scrollX = useRef(new Animated.Value(0)).current;
     const [activeIndex, setActiveIndex] = useState(0);
     const [review, setReview] = useState<Review>();
@@ -297,14 +297,14 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                             booking.cooldownStatus === BookingActivityType.SETTLER_RESOLVE_COOLDOWN_REPORT
                                                 ? 'Visit & Fix Scheduled'
                                                 : booking.cooldownStatus === BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT
-                                                    ? 'Settler rejected the cooldown report.'
+                                                    ? 'Settler rejected the warranty report.'
                                                     : ''
                                         }
                                         subtitle={
                                             booking.cooldownStatus === BookingActivityType.SETTLER_RESOLVE_COOLDOWN_REPORT
                                                 ? 'Your settler is on the way to resolve the issue.'
                                                 : booking.cooldownStatus === BookingActivityType.SETTLER_REJECT_COOLDOWN_REPORT
-                                                    ? 'Your settler has rejected your cooldown report.'
+                                                    ? 'Your settler has rejected your warranty report.'
                                                     : ''
                                         }
                                     />
@@ -735,14 +735,14 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                     ) : status === 5 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <View style={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                                                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in cooldown period.</Text>
+                                                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in warranty period.</Text>
                                                 <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>
                                                     Take this time to review the service and let us know if something doesn’t look right.
                                                 </Text>
 
                                                 {/* Countdown Display */}
                                                 <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
-                                                    {timeLeft > 0 ? formatTime(timeLeft) : "Cooldown finished"}
+                                                    {timeLeft > 0 ? formatTime(timeLeft) : "Warranty period finished"}
                                                 </Text>
 
                                                 {/* Manual Complete Button */}
@@ -1083,14 +1083,14 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 }}
                                             >
                                                 <View style={{ flexDirection: 'row' }}>
-                                                    <Text>View your cooldown report </Text>
+                                                    <Text>View your warranty report </Text>
                                                     <Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>HERE</Text>
                                                 </View>
                                             </TouchableOpacity>
                                         </View>
                                     ) : status === 9.1 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>You're about to report cooldown problem</Text>
+                                            <Text style={{ fontWeight: 'bold' }}>You're about to report warranty problem</Text>
                                             <Text style={{ fontSize: 12, color: COLORS.blackLight2, textAlign: 'center' }}>Provide evidence for your report below</Text>
                                             <TouchableOpacity
                                                 style={{
@@ -1108,12 +1108,12 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                     setStatus(5);
                                                 }}
                                             >
-                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel Issue Cooldown Report</Text>
+                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel Issue Warranty Report</Text>
                                             </TouchableOpacity>
                                         </View>
                                     ) : status === 9.2 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Settler Incoming to Resolve the Cooldown Report</Text>
+                                            <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>Settler Incoming to Resolve the Warranty Report</Text>
                                             <TouchableOpacity
                                                 style={{
                                                     backgroundColor: COLORS.primary,
@@ -1139,7 +1139,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 }}
                                             >
                                                 <View style={{ flexDirection: 'row' }}>
-                                                    <Text>View your cooldown report </Text>
+                                                    <Text>View your warranty report </Text>
                                                     <Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>HERE</Text>
                                                 </View>
                                             </TouchableOpacity>
@@ -1455,8 +1455,8 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 {index === 4 && (
                                                     <View>
                                                         <AttachmentForm
-                                                            title="Report Problem during Cooldown Period"
-                                                            description="You can report any problem regarding the service during this cooldown period."
+                                                            title="Report Problem during Warranty Period"
+                                                            description="You can report any problem regarding the service during this warranty period."
                                                             remarkPlaceholder='Water dripping from the faucet after the settler fixed it.'
                                                             initialImages={booking.cooldownReportImageUrls || []}
                                                             initialRemark={booking.cooldownReportRemark || ''}

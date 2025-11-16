@@ -36,7 +36,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
     const scrollViewTabHeader = useRef<any>(null);
     const scrollViewTabContent = useRef<any>(null);
-    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Cooldown Report', 'Payment Release'];
+    const buttons = ['Transaction Summary', 'Service Notes', 'Service Evidence', 'Incompletion Flag', 'Warranty Report', 'Payment Release'];
     const scrollX = useRef(new Animated.Value(0)).current;
     const onClickHeader = (i: any) => scrollViewTabHeader.current.scrollTo({ x: i * SIZES.width });
     const onClick = (i: any) => scrollViewTabContent.current.scrollTo({ x: i * SIZES.width });
@@ -252,7 +252,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                 if (remaining <= 0) {
                     setTimeLeft(0);
                     clearInterval(timer);
-                    // Auto-complete booking when cooldown ends
+                    // Auto-complete booking when warranty ends
                     if (booking.status !== 6 && booking.id) {
                         updateBooking(booking.id, {
                             cooldownReportImageUrls: deleteField(),
@@ -446,10 +446,10 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                             <Ionicons name="alert-circle-outline" size={20} color={COLORS.primary} />
                                             <View style={{ paddingLeft: 10, flex: 1 }}>
                                                 <Text style={{ fontSize: 14, color: COLORS.title, fontWeight: '600' }}>
-                                                    Cooldown Report - Not Resolved
+                                                    Warranty Report - Not Resolved
                                                 </Text>
                                                 <Text style={{ fontSize: 12, color: COLORS.black, marginTop: 4 }}>
-                                                    The customer has indicated that the cooldown report issue has not been resolved.
+                                                    The customer has indicated that the warranty report issue has not been resolved.
                                                 </Text>
                                             </View>
                                         </View>
@@ -458,8 +458,8 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
 
                                 {booking.cooldownReportImageUrls && booking.cooldownReportRemark && (
                                     <WarningCard
-                                        text={'Cooldown Problem Reported'}
-                                        remark={'Customer has submitted the evidence to resolve the cooldown problem.'}
+                                        text={'Warranty Problem Reported'}
+                                        remark={'Customer has submitted the evidence to resolve the warranty problem.'}
                                         imageUrls={booking.cooldownReportImageUrls || []}
                                         onPress={() => {
                                             onClick(4);
@@ -748,11 +748,11 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                         </View>
                                     ) : status === 5 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in cooldown period</Text>
+                                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>You're in warranty period</Text>
                                             <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Customer will review your job completion and wait for the latecoming issues if exist.</Text>
                                             {/* Countdown Display */}
                                             <Text style={{ fontSize: 16, fontWeight: "500", marginBottom: 4 }}>
-                                                {timeLeft > 0 ? formatTime(timeLeft) : "Cooldown finished"}
+                                                {timeLeft > 0 ? formatTime(timeLeft) : "Warranty peri finished"}
                                             </Text>
                                             <TouchableOpacity
                                                 style={{
@@ -901,7 +901,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                         </View>
                                     ) : status === 9 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Cooldown Report Uploaded by Customer</Text>
+                                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Warranty Report Uploaded by Customer</Text>
                                             <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Select your action regarding it.</Text>
                                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '90%', gap: 10, paddingHorizontal: 10 }}>
                                                 <TouchableOpacity
@@ -982,7 +982,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                 }}
                                             >
                                                 <View style={{ flexDirection: 'row' }}>
-                                                    <Text>View cooldown problem report </Text>
+                                                    <Text>View warranty problem report </Text>
                                                     <Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>HERE</Text>
                                                 </View>
                                             </TouchableOpacity>
@@ -1011,7 +1011,7 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                         </View>
                                     ) : status === 9.2 ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-                                            <Text style={{ fontWeight: 'bold' }}>You're Going to Resolve the Cooldown Report</Text>
+                                            <Text style={{ fontWeight: 'bold' }}>You're Going to Resolve the Warranty Report</Text>
                                             <Text style={{ fontSize: 13, color: COLORS.blackLight2, textAlign: 'center', paddingBottom: 10 }}>Upload the completion evidence in this section below. Click this button below.</Text>
                                             <TouchableOpacity
                                                 style={{
@@ -1126,7 +1126,6 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                         <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.black }} numberOfLines={1} ellipsizeMode="tail">Settling for: {booking.firstName} {booking.lastName}</Text>
                                                     </View>
                                                 </TouchableOpacity>
-                                                <Text style={{ fontSize: 14, color: COLORS.black }}>4.5 ratings</Text>
                                             </View>
                                             <TouchableOpacity
                                                 onPress={() => { if (user && customer) handleChat(user.uid, customer.uid) }}
@@ -1320,8 +1319,8 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
                                                     (booking.cooldownReportImageUrls && booking.cooldownReportImageUrls.length > 0 && booking.cooldownReportRemark && booking.cooldownReportRemark.length > 0) ? (
                                                         <View>
                                                             <AttachmentForm
-                                                                title="Report Problem during Cooldown Period"
-                                                                description="You can report any problem regarding the service during this cooldown period."
+                                                                title="Report Problem during Warranty Period"
+                                                                description="You can report any problem regarding the service during this warranty period."
                                                                 remarkPlaceholder='Water dripping from the faucet after the settler fixed it.'
                                                                 initialImages={booking.cooldownReportImageUrls || []}
                                                                 initialRemark={booking.cooldownReportRemark || ''}
