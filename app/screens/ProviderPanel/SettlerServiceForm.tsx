@@ -160,7 +160,7 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
   }, []);
 
   useEffect(() => {
-    setSelectedServiceCardImageUrls(settlerService?.serviceCardImageUrls[0] || null);
+    setSelectedServiceCardImageUrls(settlerService?.serviceCardImageUrls[0] ?? null);
     setServiceCardImageUrls(settlerService?.serviceCardImageUrls || []);
     setServiceCardBrief(settlerService?.serviceCardBrief || '');
     setIsAvailableImmediately(settlerService?.isAvailableImmediately || false);
@@ -440,8 +440,8 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     justifyContent: 'center',
                     width: '100%'
                   }}
-                  onPress={() => {
-                    handleListing();
+                  onPress={async () => {
+                    await handleListing();
                     navigation.goBack();
                   }}
                 >
