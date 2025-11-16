@@ -18,7 +18,7 @@ import type { AppDispatch } from '../../redux/store';
 import { fetchFavorites } from '../../redux/favoriteSlice';
 import FavoriteButton from '../../components/FavoriteButton';
 import { Catalogue, fetchCatalogue } from '../../services/CatalogueServices';
-import { categories } from '../../constants/ServiceCategory';
+import { fetchSystemParameters, ServiceCategory } from '../../services/SystemParameterServices';
 
 type HomeScreenProps = StackScreenProps<RootStackParamList, 'Home'>
 
@@ -27,6 +27,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     const [catalogue, setCatalogue] = useState<Catalogue[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [categories, setCategories] = useState<ServiceCategory[]>([]);
 
     const { user } = useUser();
 
@@ -67,6 +68,12 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     };
     // Fetch products from Firestore using the separated model function
     const fetchData = async () => {
+
+        // fetch system parameters
+        const systemParameters = await fetchSystemParameters();
+        if (systemParameters.serviceCategories) {
+            setCategories(systemParameters.serviceCategories);
+        }
         try {
             const [catalogueList] = await Promise.all([fetchCatalogue()]);
             setCatalogue(catalogueList);
