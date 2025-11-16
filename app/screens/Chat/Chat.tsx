@@ -16,7 +16,7 @@ import {
 import storage from '@react-native-firebase/storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { fetchSelectedUser, User, useUser } from '../../context/UserContext';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Image, Modal, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import { Booking } from '../../services/BookingServices';
 import { Timestamp } from '@react-native-firebase/firestore';
@@ -79,32 +79,31 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
     }
   };
 
+  const fetchChatDetails = async () => {
+    try {
+      const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      if (chatDoc.exists()) {
+        const chatData = chatDoc.data();
+        const otherUserId = chatData.participants?.find((id: string) => id !== user?.uid);
 
-  useEffect(() => {
-    const fetchChatDetails = async () => {
-      try {
-        const chatDoc = await getDoc(doc(db, 'chats', chatId));
-        if (chatDoc.exists()) {
-          const chatData = chatDoc.data();
-          const otherUserId = chatData.participants?.find((id: string) => id !== user?.uid);
+        if (otherUserId) {
+          const userData = await fetchSelectedUser(otherUserId);
+          setOtherUser(userData);
+        }
 
-          if (otherUserId) {
-            const userData = await fetchSelectedUser(otherUserId);
-            setOtherUser(userData);
-          }
-
-          if (chatData.bookingId) {
-            const bookingDoc = await getDoc(doc(db, 'bookings', chatData.bookingId));
-            if (bookingDoc.exists()) {
-              setBooking(bookingDoc.data() as Booking);
-            }
+        if (chatData.bookingId) {
+          const bookingDoc = await getDoc(doc(db, 'bookings', chatData.bookingId));
+          if (bookingDoc.exists()) {
+            setBooking(bookingDoc.data() as Booking);
           }
         }
-      } catch (error) {
-        console.error('Error fetching chat details:', error);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching chat details:', error);
+    }
+  };
 
+  useEffect(() => {
     fetchChatDetails();
   }, [chatId, user?.uid]);
 
@@ -122,7 +121,7 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
           text: data.message,
           createdAt: data.timestamp?.toDate() || new Date(),
           userId: data.userId,
-          userName: `${otherUser?.firstName} ${otherUser?.lastName}` || 'User',
+          userName: user?.accountType === 'settler' ? 'customer' : 'settler',
           imageUrl: data.imageUrl || null,     // NEW
         };
       });
@@ -195,113 +194,121 @@ export const Chat = ({ route, navigation }: ChatScreenProps) => {
 
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
-        </TouchableOpacity>
+  <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 50} // adjust based on header + booking card
+  >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color="#fff" />
+          </TouchableOpacity>
 
-        {otherUser?.profileImageUrl ? (
-          <Image source={{ uri: otherUser.profileImageUrl }} style={styles.profileImage} />
-        ) : (
-          <View style={styles.profilePlaceholder}>
-            <Text style={styles.placeholderText}>
-              {otherUser?.firstName?.charAt(0).toUpperCase() || '?'}
-            </Text>
+          {otherUser?.profileImageUrl ? (
+            <Image source={{ uri: otherUser.profileImageUrl }} style={styles.profileImage} />
+          ) : (
+            <View style={styles.profilePlaceholder}>
+              <Text style={styles.placeholderText}>
+                {otherUser?.firstName?.charAt(0).toUpperCase() || '?'}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerName}>{otherUser?.firstName} {otherUser?.lastName}</Text>
+            {booking && (
+              <Text style={styles.headerSubtitle}>
+                {booking.catalogueService.title || 'Booking'}
+              </Text>
+            )}
           </View>
+        </View>
+
+        {/* Booking Card */}
+        {booking && (
+          <TouchableOpacity
+            style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}
+            onPress={() => navigation.navigate('MyBookingDetails', { booking })}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bookingTitle}>Booking Details</Text>
+              <Text style={styles.bookingInfo}>
+                Date: {typeof booking.selectedDate === 'string'
+                  ? booking.selectedDate
+                  : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
+              </Text>
+              <StatusBadge status={Number(booking.status)} />
+            </View>
+            {booking.catalogueService?.imageUrls && (
+              <Image
+                source={{ uri: booking.catalogueService.imageUrls[0] }}
+                style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }}
+              />
+            )}
+          </TouchableOpacity>
         )}
 
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerName}>{otherUser?.firstName} {otherUser?.lastName}</Text>
-          {booking && (
-            <Text style={styles.headerSubtitle}>
-              {booking.catalogueService.title || 'Booking'}
-            </Text>
-          )}
+        {/* Messages */}
+        <FlatList
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(item) => item._id}
+          inverted
+          contentContainerStyle={styles.messagesList}
+          keyboardShouldPersistTaps="handled"
+        />
+
+        {/* Input */}
+        <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={handleAttachImage} style={{ marginRight: 8 }}>
+            <Ionicons name="image-outline" size={28} color={COLORS.primary} />
+          </TouchableOpacity>
+
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message..."
+            placeholderTextColor="#999"
+            style={styles.input}
+            multiline
+          />
+          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+            <Text style={styles.sendText}>Send</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Booking Info Card */}
-      {booking && (
-        <TouchableOpacity
-          style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }]}
-          onPress={() => navigation.navigate('MyBookingDetails', { booking: booking })}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bookingTitle}>Booking Details</Text>
-            <Text style={styles.bookingInfo}>
-              Date: {typeof booking.selectedDate === 'string'
-                ? booking.selectedDate
-                : (booking.selectedDate as Timestamp)?.toDate?.()?.toLocaleDateString() || 'TBD'}
-            </Text>
-            <StatusBadge status={Number(booking.status)} />
-          </View>
-          {booking.catalogueService?.imageUrls && (
-            <Image
-              source={{ uri: booking.catalogueService.imageUrls[0] }}
-              style={{ width: 60, height: 60, borderRadius: 8, marginLeft: 10 }}
+        {/* Image Preview Modal */}
+        {previewVisible && (
+          <Modal visible transparent>
+            <ImageViewer
+              imageUrls={imageList.map(uri => ({ url: uri }))}
+              index={previewIndex}
+              enableSwipeDown
+              onSwipeDown={() => setPreviewVisible(false)}
             />
-          )}
-        </TouchableOpacity>
-      )}
-
-      {/* Messages */}
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item._id}
-        inverted
-        contentContainerStyle={styles.messagesList}
-      />
-
-      {/* Input */}
-      <View style={styles.inputContainer}>
-        <TouchableOpacity onPress={handleAttachImage} style={{ marginRight: 8 }}>
-          <Ionicons name="image-outline" size={28} color={COLORS.primary} />
-        </TouchableOpacity>
-
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type a message..."
-          placeholderTextColor="#999"
-          style={styles.input}
-          multiline
-        />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendText}>Send</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setPreviewVisible(false)}
+              style={{
+                position: 'absolute',
+                top: 40,
+                right: 20,
+                zIndex: 10,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                padding: 10,
+                borderRadius: 40,
+              }}
+            >
+              <Ionicons name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+          </Modal>
+        )}
       </View>
-
-      {/* Image Preview Modal */}
-      <Modal visible={previewVisible} transparent>
-        <ImageViewer
-          imageUrls={imageList.map(uri => ({ url: uri }))}
-          index={previewIndex}
-          enableSwipeDown
-          onSwipeDown={() => setPreviewVisible(false)}
-          onCancel={() => setPreviewVisible(false)}
-        />
-
-        {/* Optional Close Button */}
-        <TouchableOpacity
-          onPress={() => setPreviewVisible(false)}
-          style={{
-            position: 'absolute',
-            top: 40,
-            right: 20,
-            zIndex: 10,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            padding: 10,
-            borderRadius: 40,
-          }}
-        >
-          <Ionicons name="close" size={30} color="#fff" />
-        </TouchableOpacity>
-      </Modal>
-    </View>
-  );
+    </TouchableWithoutFeedback>
+  </KeyboardAvoidingView>
+);
 };
 
 const styles = StyleSheet.create({

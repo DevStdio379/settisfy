@@ -1229,7 +1229,6 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                         <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.black }} numberOfLines={1} ellipsizeMode="tail">Settled by: {booking.settlerFirstName} {booking.settlerLastName}</Text>
                                                     </View>
                                                 </TouchableOpacity>
-                                                <Text style={{ fontSize: 14, color: COLORS.black }}>4.5 ratings</Text>
                                             </View>
                                             <TouchableOpacity
                                                 onPress={() => { if (user && settler) handleChat(user.uid, settler.uid) }}
