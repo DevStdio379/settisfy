@@ -21,7 +21,6 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
 
 
   const [settlerService, setSettlerService] = useState(route.params.settlerService);
-  const [selectedServiceCardImageUrls, setSelectedServiceCardImageUrls] = useState<string | null>(null);
   const [serviceCardImageUrls, setServiceCardImageUrls] = useState<string[]>([]);
   const [serviceCardBrief, setServiceCardBrief] = useState<string>('');
   const [isAvailableImmediately, setIsAvailableImmediately] = useState(false);
@@ -160,7 +159,6 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
   }, []);
 
   useEffect(() => {
-    setSelectedServiceCardImageUrls(settlerService?.serviceCardImageUrls[0] ?? null);
     setServiceCardImageUrls(settlerService?.serviceCardImageUrls || []);
     setServiceCardBrief(settlerService?.serviceCardBrief || '');
     setIsAvailableImmediately(settlerService?.isAvailableImmediately || false);
