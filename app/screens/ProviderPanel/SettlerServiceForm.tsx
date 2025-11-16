@@ -11,7 +11,6 @@ import { CategoryDropdown } from '../../components/CategoryDropdown';
 import { createSettlerService, deleteSettlerService, fetchSelectedSettlerService, updateSettlerService, uploadImages } from '../../services/SettlerServiceServices';
 import { useUser } from '../../context/UserContext';
 import { Catalogue, fetchAllCatalogue } from '../../services/CatalogueServices';
-import { serviceLocation } from '../../constants/ServiceLocation';
 import AttachmentForm from '../../components/Forms/AttachmentForm';
 import { fetchSystemParameters, ServiceArea, ServiceCategory } from '../../services/SystemParameterServices';
 
