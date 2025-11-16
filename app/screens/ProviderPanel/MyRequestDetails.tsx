@@ -236,7 +236,6 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     useEffect(() => {
         if (booking?.updatedAt && booking.status === 5 && booking?.catalogueService.coolDownPeriodHours) {
             const cooldownMs = booking.catalogueService.coolDownPeriodHours * 60 * 60 * 1000;
-
             // ✅ Handle both Firestore Timestamp and native Date
             const updatedAt =
                 booking.updatedAt?.toDate?.() instanceof Date
@@ -295,9 +294,11 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
     }, []);
 
     const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        fetchSelectedBookingData().then(() => setRefreshing(false));
-    }, []);
+        setLoading(true);
+        fetchSelectedBookingData().then(() => {
+            setLoading(false);
+        });
+    }, [booking]);
 
     // status info:
     // 0.1: reviewing booking (check payment)
@@ -323,11 +324,6 @@ const MyRequestDetails = ({ navigation, route }: MyRequestDetailsScreenProps) =>
         { label: "Booking\nCompleted", date: 'Release\npayment', completed: (status ?? 0) >= 6 },
     ];
 
-    const actions = [
-        { buttonTitle: 'Extend Period', onPressAction: () => { setSubScreenIndex(1) } },
-        { buttonTitle: 'Adjust Quotation', onPressAction: () => { setSubScreenIndex(2) } },
-        { buttonTitle: 'Contact Support', onPressAction: () => Alert.alert('Contact Support Pressed') },
-    ];
 
     const formatTime = (ms: number) => {
         const totalSeconds = Math.floor(ms / 1000);

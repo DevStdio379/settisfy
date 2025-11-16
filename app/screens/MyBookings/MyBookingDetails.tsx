@@ -27,6 +27,7 @@ import InfoBar from '../../components/InfoBar';
 import AddressCard from '../../components/Card/AddressCard';
 import firestore, { deleteField } from '@react-native-firebase/firestore';
 import { fetchSystemParameters, SystemParameter } from '../../services/SystemParameterServices';
+import { set } from 'date-fns';
 
 type MyBookingDetailsScreenProps = StackScreenProps<RootStackParamList, 'MyBookingDetails'>;
 
@@ -76,66 +77,47 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
         }
     };
 
+    const fetchSelectedBookingData = async () => {
+        if (booking) {
+            try {
+                const selectedBooking = await fetchSelectedBooking(booking.id || 'undefined');
+                if (selectedBooking) {
+                    setBooking(selectedBooking);
+                    setStatus(Number(selectedBooking.status));
+
+                    const fetchedSettler = await fetchSelectedUser(selectedBooking.settlerId!);
+                    if (fetchedSettler) {
+                        setSettler(fetchedSettler);
+                    }
+
+                    const fetchedReview = await getReviewByBookingId(booking.id || '');
+                    if (fetchedReview) {
+                        // Alert.alert('L Review found');
+                        setReview(fetchedReview);
+                    } else {
+                        // Alert.alert('L Review not found');
+                    }
+                } else {
+                    // Alert.alert('B Borrowing not found');
+                }
+            } catch (error) {
+                console.error('Failed to fetch selected lending details:', error);
+            }
+        }
+        setLoading(false);
+    };
+
     const fetchData = async () => {
-        try {
-            if (!booking?.id) return;
-
-            // ✅ Fetch the latest booking data first
-            const selectedBooking = await fetchSelectedBooking(booking.id);
-            if (!selectedBooking) return;
-
-            // ✅ Update the local booking state
-            setBooking(selectedBooking);
-            setStatus(Number(selectedBooking.status));
-
-            // ✅ Fetch system parameters in parallel
-            const systemParamsPromise = fetchSystemParameters();
-
-            // ✅ Conditionally fetch settler and review data
-            const settlerPromises = selectedBooking.settlerId
-                ? [
-                    fetchSelectedUser(selectedBooking.settlerId),
-                    getReviewByBookingId(selectedBooking.id!)
-                ]
-                : [];
-
-
-            // ✅ Run all promises in parallel
-            const [systemParams, settlerData] = await Promise.all([
-                systemParamsPromise,
-                Promise.all(settlerPromises),
-            ]);
-
-            // ✅ Update state with fetched data
-            if (systemParams) setSystemParameters(systemParams);
-
-            if (settlerData.length) {
-                const [fetchedSettler, fetchedReview] = settlerData;
-                if (fetchedSettler) setSettler(fetchedSettler as User);
-                if (fetchedReview && 'id' in fetchedReview) setReview(fetchedReview as Review);
+        if (booking) {
+            setBooking(booking);
+            setStatus(Number(booking.status));
+            
+            const systemParams = await fetchSystemParameters();
+            if (systemParams) {
+                setSystemParameters(systemParams);
             }
-
-            // ✅ Process addons
-            if (selectedBooking.addons) {
-                const initializedAddons = selectedBooking.addons.map(addon => ({
-                    ...addon,
-                    subOptions: addon.subOptions.map(opt => ({ ...opt, isCompleted: true })),
-                }));
-                setLocalAddons(initializedAddons);
-                setAdjustedTotal(Number(selectedBooking.total || 0));
-            }
-
-            // ✅ Check manual quote completion
-            if (selectedBooking.manualQuoteDescription && selectedBooking.manualQuotePrice) {
-                setIsManualQuoteCompleted(true);
-            }
-
-            // ✅ Set notes image
-            if (selectedBooking.notesToSettlerImageUrls?.length) {
-                setSelectedNotesToSettlerImageUrl(selectedBooking.notesToSettlerImageUrls[0]);
-            }
-        } catch (err) {
-            console.error("Error in fetchData:", err);
+        } else {
+            Alert.alert('Booking not found');
         }
     };
 
@@ -195,9 +177,9 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
 
     const onRefresh = useCallback(() => {
-        setRefreshing(true);
-        fetchData().then(() => {
-            setRefreshing(false);
+        setLoading(true);
+        fetchSelectedBookingData().then(() => {
+            setLoading(false);
         });
     }, [booking]);
 
@@ -615,6 +597,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                     setSelectedSettlerId(booking.settlerId || '');
                                                                                     setSelectedSettlerFirstName(booking.settlerFirstName || '');
                                                                                     setSelectedSettlerLastName(booking.settlerLastName || '');
+                                                                                    setLoading(false);
                                                                                     onRefresh();
                                                                                 }}
                                                                             >
