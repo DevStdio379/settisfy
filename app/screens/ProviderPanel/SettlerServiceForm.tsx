@@ -8,12 +8,12 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { GlobalStyleSheet } from '../../constants/StyleSheet';
 import { CategoryDropdown } from '../../components/CategoryDropdown';
-import { categories } from '../../constants/ServiceCategory';
 import { createSettlerService, deleteSettlerService, fetchSelectedSettlerService, updateSettlerService, uploadImages } from '../../services/SettlerServiceServices';
 import { useUser } from '../../context/UserContext';
 import { Catalogue, fetchAllCatalogue } from '../../services/CatalogueServices';
 import { serviceLocation } from '../../constants/ServiceLocation';
 import AttachmentForm from '../../components/Forms/AttachmentForm';
+import { fetchSystemParameters, ServiceArea, ServiceCategory } from '../../services/SystemParameterServices';
 
 type SettlerServiceFormScreenProps = StackScreenProps<RootStackParamList, 'SettlerServiceForm'>
 
@@ -37,6 +37,8 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
   const [isActive, setIsActive] = useState<boolean>(false);
 
   const [index, setIndex] = useState(0);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [category, setCategory] = useState<string>('');
   const [catalogue, setCatalogue] = useState<Catalogue[]>();
   const [selectedCatalogue, setSelectedCatalogue] = useState<Catalogue>();
@@ -136,38 +138,27 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
     );
   };
 
-  const userId = user?.uid;
-  useEffect(() => {
-    const getAddresses = async () => {
-      if (userId) {
-        const catalogueData = await fetchAllCatalogue();
-        setCatalogue(catalogueData);
-      }
-    };
+  const fetchData = async () => {
 
-    if (userId) getAddresses();
-  }, [userId]);
-
-  const fetchSelectedSettlerServiceData = async (settlerServiceId: string) => {
-    try {
-      const fetchSelectedService = await fetchSelectedSettlerService(settlerServiceId);
-      if (fetchSelectedService) {
-        setServiceCardImageUrls(fetchSelectedService.serviceCardImageUrls);
-        setSelectedServiceCardImageUrls(fetchSelectedService.serviceCardImageUrls[0]);
-        setServiceCardBrief(fetchSelectedService.serviceCardBrief);
-        setIsAvailableImmediately(fetchSelectedService.isAvailableImmediately);
-        setAvailableDays(fetchSelectedService.availableDays || []);
-        setServiceStartTime(fetchSelectedService.serviceStartTime);
-        setServiceEndTime(fetchSelectedService.serviceEndTime);
-        setSelectedLocation(fetchSelectedService.serviceLocation);
-        setIsActive(fetchSelectedService.isActive);
-      } else {
-        console.log('No settler service data found.');
-      }
-    } catch (error) {
-      console.error('Error fetching settler service data:', error);
+    // Fetch system parameters for service categories
+    const systemParameters = await fetchSystemParameters();
+    if (systemParameters.settlerResources) {
+      setCategories(systemParameters.serviceCategories)
     }
+
+    // Fetch system parameters for service areas
+    if (systemParameters.serviceAreas) {
+      setServiceAreas(systemParameters.serviceAreas);
+    }
+
+
+    const allCatalogue = await fetchAllCatalogue();
+    setCatalogue(allCatalogue);
   }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useEffect(() => {
     setSelectedServiceCardImageUrls(settlerService?.serviceCardImageUrls[0] || null);
@@ -182,75 +173,9 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
     setSelectedCatalogue(settlerService?.selectedCatalogue)
   }, [settlerService])
 
-  const selectImages = async () => {
-    const options = {
-      mediaType: 'photo' as const,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-      selectionLimit: 5 - serviceCardImageUrls.length, // Limit the selection to the remaining slots
-    };
-
-    launchImageLibrary(options, async (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorMessage) {
-        console.log('Image picker error: ', response.errorMessage);
-      } else {
-        const selectedImages = response.assets?.map(asset => asset.uri).filter(uri => uri !== undefined) as string[] || [];
-        setServiceCardImageUrls((prevImages) => {
-          const updatedImages = [...prevImages, ...selectedImages];
-          setSelectedServiceCardImageUrls(updatedImages[0]);
-          return updatedImages;
-        });
-      }
-    });
-  };
-
-  // Function to handle image selection (Gallery & Camera)
-  const cameraImage = async () => {
-    const options = {
-      mediaType: 'photo' as const,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-    };
-
-    if (serviceCardImageUrls.length >= 5) {
-      Alert.alert('You can only select up to 5 images.');
-      return;
-    }
-
-    launchCamera(options, async (response: any) => {
-      if (response.didCancel) {
-        console.log('User cancelled camera');
-      } else if (response.errorCode) {
-        console.log('Camera Error: ', response.errorMessage);
-      } else {
-        let newImageUri = response.assets?.[0]?.uri;
-        if (newImageUri) {
-          setServiceCardImageUrls((prevImages) => {
-            const updatedImages = [...prevImages, newImageUri];
-            setSelectedServiceCardImageUrls(updatedImages[0]);
-            return updatedImages;
-          });
-        }
-      }
-    });
-  };
-
-  const deleteImage = () => {
-    if (!selectedServiceCardImageUrls) return;
-
-    const updatedImages = serviceCardImageUrls.filter((img) => img !== selectedServiceCardImageUrls);
-    setServiceCardImageUrls(updatedImages);
-    setSelectedServiceCardImageUrls(updatedImages.length > 0 ? updatedImages[0] : null);
-  };
-
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchSelectedSettlerServiceData(settlerService?.id || '').then(() => setRefreshing(false));
+    fetchData().then(() => setRefreshing(false));
   }, [settlerService]);
 
   return (
@@ -322,8 +247,6 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     If you can't see any active job requests, it's recommended to toggle the job active status again (even if it already shows active).
                   </Text>
                 </View>
-                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Selected Catalogue</Text>
-                <View style={[GlobalStyleSheet.line]} />
                 <View style={{ paddingTop: 15 }}>
                   <TouchableOpacity
                     key={index}
@@ -352,8 +275,6 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     <Ionicons name="chevron-forward-outline" size={26} color={COLORS.blackLight} style={{ margin: 5 }} />
                   </TouchableOpacity>
                 </View>
-                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Settler Service-Card</Text>
-                <View style={[GlobalStyleSheet.line]} />
                 {
                   (settlerService) && (
                     <View style={{ flex: 1, flexDirection: 'row', marginTop: 15, marginBottom: 5 }}>
@@ -362,7 +283,8 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     </View>
                   )
                 }
-                <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center', gap: 10, paddingTop: 10 }}>
+                <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center', paddingTop: 10, }}>
+                  <View style={[GlobalStyleSheet.line]} />
                   <AttachmentForm
                     title="Service Card Image"
                     description="Upload your service card image here."
@@ -470,7 +392,7 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                     />
                   </View>
                 </View>
-                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15 }}>Service Address</Text>
+                <Text style={{ fontSize: 16, color: COLORS.title, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>Service Address</Text>
                 <View>
                   <TouchableOpacity
                     key={index}
@@ -545,14 +467,14 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                   <View style={{
                     height: 150,
                     borderColor: category.includes(categoryData.value) ? COLORS.primary : COLORS.blackLight,
-                    borderWidth: 1,
+                    borderWidth: 2,
                     borderRadius: 10,
                     justifyContent: 'center',
                     alignItems: 'center',
                     padding: 10,
-                    backgroundColor: category.includes(categoryData.value) ? COLORS.primaryLight : COLORS.background
+                    backgroundColor: category.includes(categoryData.value) ? COLORS.card : COLORS.background
                   }}>
-                    <Image source={categoryData.image} style={{ width: '100%', height: 70, resizeMode: 'contain' }} />
+                    <Image source={{ uri: categoryData.imageUrl }} style={{ width: '100%', height: 70, resizeMode: 'contain' }} />
                     <Text style={{ fontSize: 14, color: COLORS.blackLight, textAlign: 'center', marginTop: 10 }}>{categoryData.value}</Text>
                   </View>
                 </TouchableOpacity>
@@ -564,26 +486,47 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
             <View style={[GlobalStyleSheet.container, { paddingHorizontal: 25, paddingBottom: 100 }]}>
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: COLORS.black, paddingTop: 30, paddingBottom: 10 }}>Select tasks that you can offer</Text>
               {catalogue && catalogue
-                .filter(option => option.category === category)
-                .map((option) => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={{ flexDirection: "row", alignItems: "center", marginVertical: 10, }}
-                    onPress={() => {
-                      setSelectedCatalogue(option)
-                      setIndex(3)
-                    }}
-                  >
-                    <View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={{ fontSize: 16 }}>{option.title}</Text>
-                        <Ionicons name={option.isActive ? 'briefcase' : 'bug'} size={16} />
-                      </View>
-                      <Text style={{ fontSize: 12, color: COLORS.blackLight }}>{option.description}</Text>
-                    </View>
-                    <Ionicons name={'chevron-forward'} size={24} />
-                  </TouchableOpacity>
-                ))}
+              .filter(option => option.category === category)
+              .map((option) => (
+                <TouchableOpacity
+                key={option.id}
+                style={{
+                  backgroundColor: COLORS.card,
+                  borderRadius: 12,
+                  padding: 16,
+                  marginVertical: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  elevation: 2,
+                  borderWidth: 1,
+                  borderColor: COLORS.inputBorder,
+                }}
+                onPress={() => {
+                  setSelectedCatalogue(option)
+                  setIndex(3)
+                }}
+                >
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.title }}>{option.title}</Text>
+                  <Ionicons name={option.isActive ? 'checkmark-circle' : 'close-circle'} size={18} color={option.isActive ? COLORS.primary : COLORS.blackLight} style={{ marginLeft: 8 }} />
+                  </View>
+                  <Text style={{ fontSize: 13, color: COLORS.black, marginBottom: 8 }}>{option.description}</Text>
+                  {option.imageUrls && option.imageUrls.length > 0 && (
+                  <Image
+                    source={{ uri: option.imageUrls[0] }}
+                    style={{ width: 60, height: 60, borderRadius: 8, marginTop: 4 }}
+                    resizeMode="cover"
+                  />
+                  )}
+                </View>
+                <Ionicons name={'chevron-forward'} size={28} color={COLORS.black} style={{ marginLeft: 10 }} />
+                </TouchableOpacity>
+              ))}
             </View>
           }
           {/* Task Details */}
@@ -641,13 +584,13 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
             <View style={{ flex: 1, padding: 20 }}>
               <Text style={{ fontSize: 20, fontWeight: 'bold', color: COLORS.title, marginBottom: 20 }}>Select where to do the service</Text>
               <View style={{ paddingLeft: 10 }}>
-                {serviceLocation.map((location, index) => (
+                {serviceAreas.map((location, index) => (
                   <TouchableOpacity
                     key={index}
                     activeOpacity={0.8}
                     style={{
                       padding: 15,
-                      borderColor: selectedLocation === location.location ? COLORS.primary : COLORS.blackLight,
+                      borderColor: selectedLocation === location.name ? COLORS.primary : COLORS.blackLight,
                       borderRadius: 10,
                       borderWidth: 1,
                       flexDirection: 'row',
@@ -656,17 +599,17 @@ export const SettlerServiceForm = ({ navigation, route }: SettlerServiceFormScre
                       marginBottom: 10,
                     }}
                     onPress={() => {
-                      setSelectedLocation(location.location);
+                      setSelectedLocation(location.name);
                       setIndex(0)
                     }}
                   >
                     <Ionicons name="location-outline" size={30} color={COLORS.blackLight} style={{ margin: 5 }} />
                     <View style={{ flex: 1, paddingLeft: 10 }}>
                       <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.title }}>
-                        {location.location || `Address ${index + 1}`}
+                        {location.name || `Address ${index + 1}`}
                       </Text>
                       <Text style={{ fontSize: 13, color: COLORS.black }}>
-                        {location.location}
+                        Postcodes: {location.postcodePrefixes}
                       </Text>
                     </View>
                   </TouchableOpacity>

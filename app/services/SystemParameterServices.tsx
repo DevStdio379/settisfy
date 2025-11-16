@@ -8,6 +8,17 @@ export interface SettlerResource {
     link: string;
 }
 
+export interface ServiceCategory {
+    label: string;
+    value: string;
+    imageUrl: string;
+}
+
+export interface ServiceArea {
+    name: string;
+    postcodePrefixes: string;
+}
+
 export interface SystemParameter {
     platformFee: number;
     platformFeeIsActive: boolean;
@@ -16,6 +27,8 @@ export interface SystemParameter {
     faqLink: string;
     customerSupportLink: string;
     settlerResources: SettlerResource[];
+    serviceAreas: ServiceArea[];
+    serviceCategories: ServiceCategory[];
 }
 
 export const fetchSystemParameters = async (): Promise<SystemParameter> => {
@@ -31,5 +44,7 @@ export const fetchSystemParameters = async (): Promise<SystemParameter> => {
         faqLink: data.faqLink,
         customerSupportLink: data.customerSupportLink,
         settlerResources: data.settlerResources || [],
+        serviceAreas: data.serviceAreas || [],
+        serviceCategories: data.serviceCategories || [],
     };
 };
