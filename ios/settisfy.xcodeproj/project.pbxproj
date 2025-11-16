@@ -284,6 +284,8 @@
 				DEVELOPMENT_TEAM = 8JN9L8J462;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = settisfy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = settisfy;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -313,6 +315,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8JN9L8J462;
 				INFOPLIST_FILE = settisfy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = settisfy;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

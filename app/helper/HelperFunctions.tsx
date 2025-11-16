@@ -19,3 +19,17 @@ export const formatAnyTimestamp = (ts: any): string => {
         ? d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })
         : 'N/A';
 };
+
+// helper to generate a short unique identifier
+export function generateShortUniqueId() {
+  // Step 1: Get current time in milliseconds and convert to base36 (0-9 + a-z)
+  const timePart = Date.now().toString(36);
+
+  // Step 2: Add 3 random alphanumeric characters
+  const randomPart = Math.random().toString(36).substring(2, 5);
+
+  return `${timePart}${randomPart}`;
+}
+
+const refNum = generateShortUniqueId();
+console.log(refNum);

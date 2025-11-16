@@ -83,6 +83,7 @@ export interface Booking {
   paymentMethod: string;
   paymentIntentId?: string;
   paymentEvidence?: string[];
+  paymentReferenceNumber?: string;
   paymentStatus?: string;
   notesToSettlerImageUrls?: string[];
   notesToSettler?: string;
@@ -236,6 +237,7 @@ const mapBorrowingData = (doc: any): Booking => {
     paymentIntentId: data.paymentIntentId || '',
     paymentEvidence: data.paymentEvidence || [],
     paymentStatus: data.paymentStatus || '',
+    paymentReferenceNumber: data.paymentReferenceNumber || '',
     notesToSettlerImageUrls: data.notesToSettlerImageUrls,
     notesToSettler: data.notesToSettler,
     notesToSettlerStatus: data.notesToSettlerStatus,

@@ -21,7 +21,7 @@ import { fetchReviewsByCatalogueId, ReviewWithUser } from "../../services/Review
 import ImageViewer from "../../components/ImageViewer";
 import FeedbackPills from "../../components/FeedbackPills";
 import { BookingActivityType, BookingActorType, createBooking, uploadNoteToSettlerImages, uploadPaymentEvidenceImages } from "../../services/BookingServices";
-import { generateId } from "../../helper/HelperFunctions";
+import { generateId, generateShortUniqueId } from "../../helper/HelperFunctions";
 import AttachmentForm from "../../components/Forms/AttachmentForm";
 import firestore from '@react-native-firebase/firestore';
 import { fetchSystemParameters, SystemParameter } from "../../services/SystemParameterServices";
@@ -81,6 +81,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
   const [totalQuote, setTotalQuote] = useState(basePrice);
   const [systemParameters, setSystemParameters] = useState<SystemParameter | null>(null);
   const [reviews, setReviews] = useState<ReviewWithUser[]>();
+  const [paymentReferenceNumber] = useState<string>(generateShortUniqueId());
 
   // tabview
   const scrollViewHome = useRef<any>(null);
@@ -197,6 +198,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
       paymentMethod: paymentMethod,
       paymentIntentId: paymentIntentId,
       paymentEvidence: paymentEvidenceImageUrls,
+      paymentReferenceNumber: paymentReferenceNumber,
 
       // for quick actions
       manualQuoteDescription: '',
@@ -725,42 +727,120 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
               <View style={GlobalStyleSheet.line} />
               {/* Proof of Payment */}
               <View style={{ marginBottom: 20, marginTop: 10 }}>
-                <View style={{ padding: 10 }}></View>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.title, marginBottom: 6 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.title, marginBottom: 8 }}>
                   Pay via Online Transfer
                 </Text>
-                <Text style={{ fontSize: 14, color: COLORS.black, marginBottom: 10 }}>
+                <Text style={{ fontSize: 13, color: COLORS.black, marginBottom: 12 }}>
                   Please transfer the total amount to the bank account below. After transfer, upload your payment evidence using the "Proof of Payment" form.
                 </Text>
 
-                <View style={{ borderWidth: 1, borderColor: COLORS.blackLight, borderRadius: 8, padding: 12, backgroundColor: COLORS.card }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: COLORS.primary,
+                  borderRadius: 16,
+                  padding: 18,
+                  backgroundColor: COLORS.card,
+                  shadowColor: COLORS.black,
+                  shadowOpacity: 0.08,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                  marginBottom: 10,
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
                     <View style={{ flex: 1, paddingRight: 10 }}>
-                      <Text style={{ fontSize: 14, color: COLORS.blackLight, marginBottom: 4 }}>Account Name</Text>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.title }}>Settisfy Global</Text>
+                      <Text style={{ fontSize: 14, color: COLORS.black, marginBottom: 2 }}>Account Name</Text>
+                      <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.title }}>Settisfy Global</Text>
                     </View>
                     <View style={{ flex: 1, paddingLeft: 10 }}>
-                      <Text style={{ fontSize: 14, color: COLORS.blackLight, marginBottom: 4, textAlign: 'right' }}>Bank</Text>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.title, textAlign: 'right' }}>Hong Leong Bank</Text>
+                      <Text style={{ fontSize: 14, color: COLORS.black, marginBottom: 2, textAlign: 'right' }}>Bank</Text>
+                      <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.title, textAlign: 'right' }}>Hong Leong Bank</Text>
                     </View>
                   </View>
 
-                  <Text style={{ fontSize: 14, color: COLORS.blackLight, marginBottom: 4 }}>Account Number</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: COLORS.title, marginBottom: 12 }}>12600148951</Text>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert('Copy', 'Account number copied to clipboard. Please paste it in your bank app to transfer.');
-                    }}
-                    style={{
-                      backgroundColor: COLORS.primary,
-                      paddingVertical: 10,
-                      borderRadius: 6,
+                    <View style={{ marginTop: 8 }}>
+                    <Text style={{ fontSize: 14, color: COLORS.black, marginBottom: 2 }}>Account Number</Text>
+                    <View style={{
+                      flexDirection: 'row',
                       alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: COLORS.white, fontWeight: 'bold' }}>Copy Account Number</Text>
-                  </TouchableOpacity>
+                      backgroundColor: COLORS.white,
+                      borderRadius: 6,
+                      paddingVertical: 7,
+                      paddingHorizontal: 12,
+                      marginTop: 2,
+                    }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.black, flex: 1 }}>12600148951</Text>
+                      <TouchableOpacity
+                      onPress={() => {
+                        if (Platform.OS === 'ios') {
+                        ActionSheetIOS.showActionSheetWithOptions({
+                          options: ['Cancel', 'Copy'],
+                          cancelButtonIndex: 0,
+                        }, (buttonIndex) => {
+                          if (buttonIndex === 1) {
+                          // @ts-ignore
+                          require('react-native').Clipboard.setString('12600148951');
+                          Alert.alert('Copied', 'Account number copied to clipboard.');
+                          }
+                        });
+                        } else {
+                        // @ts-ignore
+                        require('react-native').Clipboard.setString('12600148951');
+                        Alert.alert('Copied', 'Account number copied to clipboard.');
+                        }
+                      }}
+                      style={{
+                        backgroundColor: COLORS.primary,
+                        paddingVertical: 5,
+                        paddingHorizontal: 10,
+                        borderRadius: 5,
+                        marginLeft: 10,
+                      }}
+                      >
+                      <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 12 }}>Copy</Text>
+                      </TouchableOpacity>
+                    </View>
+                    </View>
+
+                    <View style={{ marginTop: 8 }}>
+                    <Text style={{ fontSize: 14, color: COLORS.black, marginBottom: 2 }}>Payment Reference Number</Text>
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: COLORS.white,
+                      borderRadius: 6,
+                      paddingVertical: 7,
+                      paddingHorizontal: 12,
+                      marginTop: 2,
+                    }}>
+                      {(() => {
+                      return (
+                        <>
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: COLORS.black, flex: 1 }}>{paymentReferenceNumber}</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                          // @ts-ignore
+                          require('react-native').Clipboard.setString(paymentReferenceNumber);
+                          Alert.alert('Copied', 'Reference number copied to clipboard.');
+                          }}
+                          style={{
+                          backgroundColor: COLORS.primary,
+                          paddingVertical: 5,
+                          paddingHorizontal: 10,
+                          borderRadius: 5,
+                          marginLeft: 10,
+                          }}
+                        >
+                          <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 12 }}>Copy</Text>
+                        </TouchableOpacity>
+                        </>
+                      );
+                      })()}
+                    </View>
+                    <Text style={{ fontSize: 12, color: COLORS.black, marginTop: 6 }}>
+                      Please use this reference number when making transfer.
+                    </Text>
+                  </View>
                 </View>
               </View>
               <AttachmentForm
