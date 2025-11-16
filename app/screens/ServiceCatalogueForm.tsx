@@ -9,7 +9,7 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { GlobalStyleSheet } from '../constants/StyleSheet';
 import { CategoryDropdown } from '../components/CategoryDropdown';
 import { createCatalogue, deleteCatalogue, DynamicOption, fetchSelectedCatalogue, updateCatalogue } from '../services/CatalogueServices';
-import { categories } from '../constants/ServiceCategory';
+import { fetchSystemParameters, ServiceCategory } from '../services/SystemParameterServices';
 
 type ServiceCatalogueFormScreenProps = StackScreenProps<RootStackParamList, 'ServiceCatalogueForm'>
 
@@ -29,6 +29,7 @@ export const ServiceCatalogueForm = ({ navigation, route }: ServiceCatalogueForm
   const [selectedStatus, setSelectedStatus] = useState('active');
   const [dynamicOptions, setDynamicOptions] = useState<DynamicOption[]>([]);
   const [cooldownPeriodHours, setCooldownPeriodHours] = useState<number>(0);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
 
   // options addon
   const addMainOption = () => {
@@ -195,6 +196,16 @@ export const ServiceCatalogueForm = ({ navigation, route }: ServiceCatalogueForm
   };
 
   useEffect(() => {
+
+    // fetch system parameters for categories
+    const fetchSystemParams = async () => {
+      const systemParameters = await fetchSystemParameters();
+      if (systemParameters.serviceCategories) {
+        setCategories(systemParameters.serviceCategories);
+      }
+    };
+    fetchSystemParams();
+
     if (catalogue) {
       setServiceCardImageUrls(catalogue.imageUrls || []);
       setSelectedServiceCardImageUrls(catalogue.imageUrls && catalogue.imageUrls.length > 0 ? catalogue.imageUrls[0] : null);
