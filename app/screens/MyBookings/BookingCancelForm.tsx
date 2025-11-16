@@ -133,7 +133,7 @@ const BookingCancelForm = ({ navigation, route }: BookingCancelFormScreenProps) 
                             </View>
                         </View>
                         <AttachmentForm
-                            title="Upload Reason Attachment (optional)"
+                            title="Upload Reason Attachment"
                             description={''}
                             initialImages={booking.cancelReasonImageUrls || []}
                             initialRemark={booking.cancelReasonText || ''}

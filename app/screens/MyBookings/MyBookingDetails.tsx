@@ -108,7 +108,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
 
             // ✅ Update state with fetched data
             if (systemParams) setSystemParameters(systemParams);
-            
+
             if (settlerData.length) {
                 const [fetchedSettler, fetchedReview] = settlerData;
                 if (fetchedSettler) setSettler(fetchedSettler as User);
@@ -455,23 +455,27 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontWeight: 'bold' }}>Your Booking Undergoes Settisfy Review</Text>
                                             {systemParameters?.showAdminApproveBookingButton && (
-                                                <TouchableOpacity
-                                                    style={{
-                                                        backgroundColor: COLORS.primary,
-                                                        padding: 10,
-                                                        borderRadius: 10,
-                                                        marginVertical: 10,
-                                                        width: '80%',
-                                                        alignItems: 'center',
-                                                    }}
-                                                    onPress={async () => {
-                                                        updateBooking(booking.id!, { status: 0 });
-                                                        setStatus(0);
-                                                    }}
-                                                >
-                                                    <Text style={{ color: 'white', fontWeight: 'bold' }}>[ADMIN: MANUAL APPROVE]</Text>
-                                                    <Text>for simulation only</Text>
-                                                </TouchableOpacity>
+                                                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                                    <TouchableOpacity
+                                                        style={{
+                                                            backgroundColor: COLORS.primary,
+                                                            padding: 10,
+                                                            borderRadius: 10,
+                                                            marginVertical: 10,
+                                                            width: '80%',
+                                                            alignItems: 'center',
+                                                        }}
+                                                        onPress={async () => {
+                                                            updateBooking(booking.id!, { status: 0 });
+                                                            setStatus(0);
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: 'white', fontWeight: 'bold' }}>[ADMIN: MANUAL APPROVE]</Text>
+                                                    </TouchableOpacity>
+                                                    <Text style={{ fontWeight: 'bold', color: COLORS.danger, fontSize: 13, marginBottom: 4, textAlign: 'center' }}>
+                                                        For app review purpose (simulation). Will remove after approval.
+                                                    </Text>
+                                                </View>
                                             )}
                                         </View>
                                     ) : status === 0 || status === 0.2 ? (
@@ -489,11 +493,34 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                     No settler has accepted your job yet.
                                                                 </Text>
                                                             ) : (
-                                                                <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <View
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        borderWidth: 2,
+                                                                        borderColor: COLORS.primary,
+                                                                        borderRadius: 16,
+                                                                        backgroundColor: COLORS.card,
+                                                                        padding: 16,
+                                                                        marginVertical: 10,
+                                                                        shadowColor: "#000",
+                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                        shadowOpacity: 0.08,
+                                                                        shadowRadius: 4,
+                                                                    }}
+                                                                >
+                                                                    <View style={{ width: '100%', marginBottom: 10 }}>
+                                                                        <Text style={{ fontWeight: 'bold', color: COLORS.danger, fontSize: 13, marginBottom: 4 }}>
+                                                                            For app review purpose (simulation). Will remove after approval.
+                                                                        </Text>
+                                                                    </View>
                                                                     <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 }}>
                                                                         <Text style={{ fontSize: 14, color: COLORS.black }}>Preferred Settler</Text>
                                                                         <TouchableOpacity
-                                                                            onPress={() => { setSubScreenIndex(1) }}
+                                                                            onPress={() => {
+                                                                                // setSubScreenIndex(1)
+                                                                            }}
                                                                         >
                                                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                                                 <Text style={{ fontSize: 13, color: COLORS.blackLight, marginRight: 4 }}>
@@ -502,63 +529,37 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                 <Ionicons name="chevron-forward-outline" size={18} color={COLORS.blackLight2} />
                                                                             </View>
                                                                         </TouchableOpacity>
-
                                                                     </View>
-                                                                    {bookingWithSettlerProfiles && bookingWithSettlerProfiles[profileIndex] && (
-                                                                        <TouchableOpacity
-                                                                            key={index}
-                                                                            style={[{ width: '100%', paddingVertical: 10, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: "#ccc", backgroundColor: "#fff", }, bookingWithSettlerProfiles[profileIndex].settlerProfile?.uid === selectedSettlerId && { borderColor: COLORS.primary }]}
-                                                                            onPress={async () => {
-                                                                                setSubScreenIndex(2);
-                                                                                setProfileIndex(index);
-                                                                            }}
-                                                                            activeOpacity={0.8}
-                                                                        >
-
-                                                                            <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
-                                                                                <View>
-                                                                                    {
-                                                                                        bookingWithSettlerProfiles[profileIndex].settlerProfile?.profileImageUrl ? (
-                                                                                            <Image
-                                                                                                source={{ uri: bookingWithSettlerProfiles[profileIndex].settlerProfile?.profileImageUrl }}
-                                                                                                style={{
-                                                                                                    width: 50,
-                                                                                                    height: 50,
-                                                                                                    borderRadius: 20,
-                                                                                                }}
-                                                                                            />
-                                                                                        ) : (
-                                                                                            <View
-                                                                                                style={{
-                                                                                                    width: 50,
-                                                                                                    height: 50,
-                                                                                                    borderRadius: 20,
-                                                                                                    backgroundColor: COLORS.card,
-                                                                                                    justifyContent: 'center',
-                                                                                                    alignItems: 'center',
-                                                                                                }}
-                                                                                            >
-                                                                                                <Ionicons name="person" size={30} color={COLORS.blackLight} />
-                                                                                            </View>
-                                                                                        )
-                                                                                    }
+                                                                    {booking.acceptors && booking.acceptors.length > 0 && (
+                                                                        <View style={{ width: '100%' }}>
+                                                                            {booking.acceptors.map((acceptor, idx) => (
+                                                                                <View
+                                                                                    key={idx}
+                                                                                    style={{
+                                                                                        backgroundColor: COLORS.card,
+                                                                                        borderRadius: 12,
+                                                                                        padding: 12,
+                                                                                        marginVertical: 6,
+                                                                                        shadowColor: "#000",
+                                                                                        shadowOffset: { width: 0, height: 2 },
+                                                                                        shadowOpacity: 0.08,
+                                                                                        shadowRadius: 4,
+                                                                                        borderWidth: 1,
+                                                                                        borderColor: COLORS.borderColor,
+                                                                                    }}
+                                                                                >
+                                                                                    <Text style={{ fontWeight: 'bold', fontSize: 16, color: COLORS.title }}>
+                                                                                        {acceptor.firstName} {acceptor.lastName}
+                                                                                    </Text>
+                                                                                    <Text style={{ fontSize: 13, color: COLORS.blackLight2, marginTop: 2 }}>
+                                                                                        Settler ID: <Text style={{ color: COLORS.text }}>{acceptor.settlerId}</Text>
+                                                                                    </Text>
+                                                                                    <Text style={{ fontSize: 13, color: COLORS.blackLight2 }}>
+                                                                                        Service ID: <Text style={{ color: COLORS.text }}>{acceptor.settlerServiceId}</Text>
+                                                                                    </Text>
                                                                                 </View>
-                                                                                <View style={{ flex: 7, paddingLeft: 20 }}>
-                                                                                    <TouchableOpacity onPress={() => {
-                                                                                        setProfileIndex(index);
-                                                                                        setSubScreenIndex(2);
-                                                                                    }}>
-                                                                                        <View style={{}}>
-                                                                                            <Text style={{ fontSize: 17, fontWeight: 'bold', color: COLORS.black }} numberOfLines={1} ellipsizeMode="tail">{bookingWithSettlerProfiles[profileIndex].settlerProfile?.firstName} {bookingWithSettlerProfiles[profileIndex].settlerProfile?.lastName}</Text>
-                                                                                        </View>
-                                                                                    </TouchableOpacity>
-                                                                                    <Text style={{ fontSize: 14, color: COLORS.black }}>{(!bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings || bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings === 0) ? 'No ratings' : `${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.averageRatings} (${bookingWithSettlerProfiles[profileIndex].settlerJobProfile?.jobsCount})`}</Text>
-                                                                                </View>
-                                                                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                                                    <Ionicons name="chevron-forward-outline" size={25} color={COLORS.blackLight2} />
-                                                                                </View>
-                                                                            </View>
-                                                                        </TouchableOpacity>
+                                                                            ))}
+                                                                        </View>
                                                                     )}
                                                                     <View style={[GlobalStyleSheet.line, { marginTop: 10 }]} />
                                                                     <View style={{ width: "100%", alignItems: "center", justifyContent: "center", paddingTop: 10 }}>
@@ -571,22 +572,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                     padding: 10,
                                                                                     borderRadius: 10,
                                                                                     marginVertical: 10,
-                                                                                    width: '40%',
-                                                                                    alignItems: 'center',
-                                                                                    opacity: loading ? 0.7 : 1,
-                                                                                }}
-                                                                                onPress={() => { setSubScreenIndex(1) }}
-                                                                            >
-                                                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>No</Text>
-                                                                            </TouchableOpacity>
-                                                                            <TouchableOpacity
-                                                                                disabled={loading}
-                                                                                style={{
-                                                                                    backgroundColor: COLORS.primary,
-                                                                                    padding: 10,
-                                                                                    borderRadius: 10,
-                                                                                    marginVertical: 10,
-                                                                                    width: '40%',
+                                                                                    width: '100%',
                                                                                     alignItems: 'center',
                                                                                     opacity: loading ? 0.7 : 1,
                                                                                 }}
@@ -613,13 +599,11 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                             type: BookingActivityType.SETTLER_SELECTED,
                                                                                             timestamp: new Date(),
                                                                                             actor: BookingActorType.CUSTOMER,
-
                                                                                             // additional info
                                                                                             settlerId: booking.acceptors[profileIndex].settlerId,
                                                                                             settlerServiceId: booking.acceptors[profileIndex].settlerServiceId,
                                                                                             settlerFirstName: booking.acceptors[profileIndex].firstName,
                                                                                             settlerLastName: booking.acceptors[profileIndex].lastName,
-                                                                                            settlerProfileImageUrl: bookingWithSettlerProfiles?.[profileIndex]?.settlerProfile?.profileImageUrl || '',
                                                                                         }),
                                                                                     });
 
@@ -634,7 +618,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                                                     onRefresh();
                                                                                 }}
                                                                             >
-                                                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>Yes</Text>
+                                                                                <Text style={{ color: 'white', fontWeight: 'bold' }}>ADMIN: select settler</Text>
                                                                             </TouchableOpacity>
                                                                         </View>
                                                                     </View>
@@ -836,7 +820,7 @@ const MyBookingDetails = ({ navigation, route }: MyBookingDetailsScreenProps) =>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
-                                    ) : status === 6 || status === 10  || (status === 11 && !booking.paymentReleaseToCustomerEvidenceUrls && !booking.paymentReleasedAmountToCustomer) ? (
+                                    ) : status === 6 || status === 10 || (status === 11 && !booking.paymentReleaseToCustomerEvidenceUrls && !booking.paymentReleasedAmountToCustomer) ? (
                                         <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                                             <Text style={{ fontWeight: 'bold' }}>{review ? 'Thank you for using our service' : 'Your feedback matters for us'}</Text>
                                             <Text style={{ fontSize: 12, color: COLORS.blackLight2, textAlign: 'center' }}>Leave a review and good rating to the service</Text>
