@@ -84,7 +84,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
 
   // tabview
   const scrollViewHome = useRef<any>(null);
-  const buttons = ['Options', 'Service Details', 'Before You Book', 'Reviews'];
+  const buttons = ['Options', 'Service Details', 'Reviews'];
 
   const scrollX = useRef(new Animated.Value(0)).current;
   const onCLick = (i: any) => scrollViewHome.current.scrollTo({ x: i * SIZES.width });
@@ -443,7 +443,7 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
                         <Text style={{ fontSize: 15, color: COLORS.black, paddingBottom: 20 }}>{service.excludedServices}</Text>
                       </View>
                     )}
-                    {tabIndex === 2 && (
+                    {/* {tabIndex === 2 && (
                       <View style={{ paddingRight: 40 }}>
                         <View style={{ paddingHorizontal: 10 }}>
                           <TouchableOpacity
@@ -530,8 +530,8 @@ const QuoteService = ({ navigation, route }: QuoteServiceScreenProps) => {
                           )}
                         </View>
                       </View>
-                    )}
-                    {tabIndex === 3 && reviews && (
+                    )} */}
+                    {tabIndex === 2 && reviews && (
                       <View style={{ paddingRight: 40 }}>
                         {/* Static reviews */}
                         {reviews.map((review, reviewIndex) => (
